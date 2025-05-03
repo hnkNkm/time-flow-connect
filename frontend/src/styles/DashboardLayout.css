@@ -1,0 +1,207 @@
+.dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1rem;
+  height: 60px;
+  background-color: var(--primary-color);
+  color: white;
+  box-shadow: var(--shadow);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.header-left,
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.menu-toggle {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+}
+
+.app-title {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.user-name {
+  margin-right: 1rem;
+  font-weight: 500;
+}
+
+.logout-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.logout-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.dashboard-container {
+  display: flex;
+  flex: 1;
+  margin-top: 60px; /* ヘッダーの高さと同じ */
+}
+
+.sidebar {
+  background-color: var(--card-background);
+  box-shadow: var(--shadow);
+  transition: all 0.3s ease;
+}
+
+/* デスクトップサイズの表示 */
+@media (min-width: 769px) {
+  .sidebar {
+    width: 250px;
+    flex-shrink: 0;
+    height: calc(100vh - 60px);
+    position: sticky;
+    top: 60px;
+    overflow-y: auto;
+  }
+
+  .main-content {
+    flex: 1;
+    padding: 2rem 0;
+    overflow-y: auto;
+  }
+
+  .mobile-sidebar-header {
+    display: none;
+  }
+}
+
+/* モバイルサイズの表示 */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100vh;
+    z-index: 1000;
+    padding-top: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar.open {
+    left: 0;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .main-content {
+    width: 100%;
+    padding: 1rem;
+  }
+
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  .mobile-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background-color: var(--primary-color);
+    color: white;
+  }
+
+  .mobile-user-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .close-menu {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+  }
+}
+
+.sidebar-nav {
+  padding: 1rem 0;
+}
+
+.sidebar-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-nav li {
+  margin-bottom: 0.25rem;
+}
+
+.sidebar-nav li a {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: var(--text-color);
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.sidebar-nav li a:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+}
+
+.sidebar-nav li.active a {
+  background-color: rgba(0, 102, 204, 0.1);
+  color: var(--primary-color);
+  font-weight: 500;
+  border-left: 3px solid var(--primary-color);
+}
+
+.sidebar-nav li a span.material-icons {
+  margin-right: 0.75rem;
+}
+
+.main-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}

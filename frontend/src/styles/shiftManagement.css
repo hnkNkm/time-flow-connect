@@ -1,0 +1,154 @@
+.shift-management-page {
+  margin: 0 auto;
+}
+
+.shift-management-page h2 {
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.date-range,
+.shift-form-container,
+.my-shifts,
+.all-shifts {
+  width: 100%;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 2rem;
+}
+
+.date-range .form-group {
+  flex: 1;
+}
+
+.shift-form-container {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.shift-form-container h3 {
+  margin-bottom: 1.25rem;
+  color: #444;
+}
+
+.shift-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.shift-form .form-group:nth-child(5) {
+  grid-column: 1 / 3;
+}
+
+.submit-button {
+  grid-column: 1 / 3;
+  padding: 0.75rem;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  margin-top: 1rem;
+}
+
+.submit-button:hover {
+  background-color: #0052a3;
+}
+
+.submit-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.my-shifts h3,
+.all-shifts h3 {
+  margin-bottom: 1rem;
+  color: #444;
+}
+
+.shifts-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #ddd;
+  background-color: white;
+}
+
+.shifts-table th,
+.shifts-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.shifts-table th {
+  background-color: #f8f9fa;
+  font-weight: 500;
+  color: #444;
+}
+
+.shifts-table tr.approved {
+  background-color: #f8fff8;
+}
+
+.shifts-table tr.pending {
+  background-color: #fff8f8;
+}
+
+.approve-button {
+  padding: 0.5rem 0.75rem;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+}
+
+.approve-button:hover {
+  background-color: #218838;
+}
+
+.approve-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.no-records {
+  padding: 2rem;
+  text-align: center;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  color: #666;
+}
+
+/* react-big-calendar のイベント */
+.shift-calendar-container .rbc-event {
+  overflow: hidden !important; /* イベント自体も隠す */
+  display: block !important;
+  line-height: 1.2 !important;
+  font-size: 0.8em !important;
+  /* white-space: normal は削除 */
+}
+
+/* イベントのコンテンツ部分で省略記号を出す */
+.shift-calendar-container .rbc-event-content {
+  white-space: nowrap !important; /* 折り返しを禁止 */
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+  width: 100%;
+}
+
+/* 月表示の "+n more" (変更なし) */
+.shift-calendar-container .rbc-show-more {
+  font-size: 0.8em !important;
+  color: #3174ad !important;
+}

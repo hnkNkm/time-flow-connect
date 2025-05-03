@@ -1,0 +1,36 @@
+.auth-layout {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.auth-logo {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.auth-logo h1 {
+  font-size: 1.8rem;
+  color: #0066cc;
+  margin-bottom: 0.5rem;
+}
+
+.auth-logo p {
+  color: #666;
+  font-size: 1rem;
+}
+
+.auth-content {
+  width: 100%;
+}

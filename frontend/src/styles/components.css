@@ -1,0 +1,222 @@
+/* Components.css - コンポーネント共通スタイル */
+
+/* ボタンスタイル */
+.primary-button,
+.secondary-button,
+.danger-button,
+.icon-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.primary-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: 1px solid var(--primary-color);
+}
+
+.primary-button:hover {
+  background-color: var(--primary-dark-color);
+  border-color: var(--primary-dark-color);
+}
+
+.secondary-button {
+  background-color: white;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.secondary-button:hover {
+  background-color: var(--bg-light-color);
+}
+
+.danger-button {
+  background-color: var(--danger-color);
+  color: white;
+  border: 1px solid var(--danger-color);
+}
+
+.danger-button:hover {
+  background-color: var(--danger-dark-color);
+  border-color: var(--danger-dark-color);
+}
+
+.icon-button {
+  padding: 6px 12px;
+}
+
+.icon-button .material-icons {
+  font-size: 18px;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* フォームコントロール */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* ローディングスピナー */
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-secondary-color);
+}
+
+/* メッセージ */
+.error-message,
+.success-message {
+  padding: 10px 16px;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  background-color: rgba(var(--danger-color-rgb), 0.1);
+  color: var(--danger-color);
+  border: 1px solid rgba(var(--danger-color-rgb), 0.3);
+}
+
+.success-message {
+  background-color: rgba(var(--success-color-rgb), 0.1);
+  color: var(--success-color);
+  border: 1px solid rgba(var(--success-color-rgb), 0.3);
+}
+
+/* テーブル */
+.records-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.records-table th,
+.records-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.records-table th {
+  background-color: var(--bg-light-color);
+  font-weight: 600;
+}
+
+.records-table tr:hover td {
+  background-color: rgba(var(--primary-color-rgb), 0.05);
+}
+
+/* 年月セレクター */
+.date-selector {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.date-selector select {
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: white;
+  min-width: 100px;
+}
+
+/* ステータスカード */
+.status-card {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.stats-card {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.stats-item {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary-color);
+  margin-bottom: 0.25rem;
+}
+
+.stats-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .records-table {
+    font-size: 0.875rem;
+  }
+
+  .stats-row {
+    flex-direction: column;
+  }
+
+  .stats-item {
+    min-width: auto;
+  }
+}

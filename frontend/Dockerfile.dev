@@ -1,0 +1,17 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# パッケージをインストールする前にrootユーザーで実行
+COPY package*.json ./
+
+# 依存関係のインストール
+RUN npm install
+
+# ソースコードをコピー
+COPY . .
+
+EXPOSE 5173
+
+# Viteの開発サーバーを起動
+CMD ["npm", "run", "dev", "--", "--host"] 
