@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, date, timedelta
@@ -6,6 +6,7 @@ import calendar
 
 from ..database import get_db
 from ..models.models import Attendance, User, PayrollSetting, TimeAdjustmentRequest
+from ..models.enums import AdjustmentStatus
 from ..schemas.attendance import (
     AttendanceCreate, 
     AttendanceUpdate, 
@@ -16,9 +17,22 @@ from ..schemas.attendance import (
     TimeAdjustmentRequestUpdate,
     TimeAdjustmentRequestResponse
 )
-from ..auth.auth import get_current_active_user, get_current_admin_user
+from ..core.dependencies import (
+    get_current_active_user,
+    get_current_admin_user,
+    DateRangeParams,
+    MonthParams,
+    check_resource_owner
+)
+from ..core.exceptions import (
+    NotFoundException,
+    BadRequestException,
+    ConflictException,
+    ForbiddenException
+)
 
 router = APIRouter(prefix="/api/attendance", tags=["attendance"])
+
 
 # 自分の勤怠を登録する
 @router.post("/check-in", response_model=AttendanceResponse)
@@ -27,6 +41,7 @@ async def check_in(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
+    """出勤登録"""
     # 同じ日にすでにチェックインしていないか確認
     today = datetime.now().date()
     today_start = datetime.combine(today, datetime.min.time())
@@ -39,10 +54,7 @@ async def check_in(
     ).first()
     
     if existing_attendance:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="すでに本日の勤怠記録が存在します"
-        )
+        raise ConflictException("すでに本日の勤怠記録が存在します")
     
     # 新しい勤怠記録を作成
     new_attendance = Attendance(
@@ -71,6 +83,7 @@ async def check_in(
     
     return new_attendance
 
+
 # チェックアウト（退勤）
 @router.put("/check-out/{attendance_id}", response_model=AttendanceResponse)
 async def check_out(
@@ -79,19 +92,14 @@ async def check_out(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    # 勤怠記録の取得と所有者の確認
+    """退勤登録"""
+    # 勤怠記録の取得
     attendance = db.query(Attendance).filter(Attendance.id == attendance_id).first()
     if not attendance:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="指定された勤怠記録が見つかりません"
-        )
+        raise NotFoundException("勤怠記録", attendance_id)
     
-    if attendance.user_id != current_user.id and not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="この勤怠記録を更新する権限がありません"
-        )
+    # 所有者チェック
+    check_resource_owner(attendance.user_id, current_user)
     
     # データの更新
     if update_data.check_out_time:
@@ -103,7 +111,7 @@ async def check_out(
     if update_data.break_end_time:
         attendance.break_end_time = update_data.break_end_time
     
-    if update_data.memo:
+    if update_data.memo is not None:
         attendance.memo = update_data.memo
     
     # 勤務時間の計算
@@ -122,40 +130,42 @@ async def check_out(
     
     return attendance
 
+
 # 自分の勤怠記録を取得
 @router.get("/my-records", response_model=List[AttendanceResponse])
 async def get_my_attendance_records(
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    date_range: DateRangeParams = Depends(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
+    """自分の勤怠記録一覧を取得"""
     query = db.query(Attendance).filter(Attendance.user_id == current_user.id)
     
     # 日付範囲でフィルタリング
-    if start_date:
-        query = query.filter(Attendance.check_in_time >= datetime.combine(start_date, datetime.min.time()))
+    if date_range.start_date:
+        query = query.filter(Attendance.check_in_time >= datetime.combine(date_range.start_date, datetime.min.time()))
     
-    if end_date:
-        query = query.filter(Attendance.check_in_time <= datetime.combine(end_date, datetime.max.time()))
+    if date_range.end_date:
+        query = query.filter(Attendance.check_in_time <= datetime.combine(date_range.end_date, datetime.max.time()))
     
     # 日付の降順でソート
     query = query.order_by(Attendance.check_in_time.desc())
     
     return query.all()
 
+
 # 自分の月間勤怠記録を取得
 @router.get("/my-monthly-records", response_model=List[AttendanceResponse])
 async def get_my_monthly_attendance_records(
-    year: int = Query(..., description="年（例：2023）"),
-    month: int = Query(..., description="月（1-12）"),
+    month_params: MonthParams = Depends(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
+    """自分の月間勤怠記録を取得"""
     # 月の開始日と終了日を計算
-    start_date = date(year, month, 1)
-    _, last_day = calendar.monthrange(year, month)
-    end_date = date(year, month, last_day)
+    start_date = date(month_params.year, month_params.month, 1)
+    _, last_day = calendar.monthrange(month_params.year, month_params.month)
+    end_date = date(month_params.year, month_params.month, last_day)
     
     # 指定した月の勤怠記録を取得
     records = db.query(Attendance).filter(
@@ -166,15 +176,16 @@ async def get_my_monthly_attendance_records(
     
     return records
 
+
 # 管理者用：全ユーザーの勤怠記録を取得
 @router.get("/all-records", response_model=List[AttendanceWithUser])
 async def get_all_attendance_records(
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-    user_id: Optional[int] = None,
+    date_range: DateRangeParams = Depends(),
+    user_id: Optional[int] = Query(None, description="特定ユーザーでフィルタ"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
+    """全ユーザーの勤怠記録一覧を取得（管理者のみ）"""
     # 基本クエリ
     query = (
         db.query(
@@ -185,11 +196,11 @@ async def get_all_attendance_records(
     )
     
     # フィルタリング
-    if start_date:
-        query = query.filter(Attendance.check_in_time >= datetime.combine(start_date, datetime.min.time()))
+    if date_range.start_date:
+        query = query.filter(Attendance.check_in_time >= datetime.combine(date_range.start_date, datetime.min.time()))
     
-    if end_date:
-        query = query.filter(Attendance.check_in_time <= datetime.combine(end_date, datetime.max.time()))
+    if date_range.end_date:
+        query = query.filter(Attendance.check_in_time <= datetime.combine(date_range.end_date, datetime.max.time()))
     
     if user_id:
         query = query.filter(Attendance.user_id == user_id)
@@ -201,29 +212,28 @@ async def get_all_attendance_records(
     result = []
     for record, user_full_name in query.all():
         attendance_dict = {
-            **vars(record),
+            **record.__dict__,
             "user_full_name": user_full_name
         }
         # SQLAlchemyの内部属性を削除
-        if "_sa_instance_state" in attendance_dict:
-            del attendance_dict["_sa_instance_state"]
-        
-        result.append(attendance_dict)
+        attendance_dict.pop("_sa_instance_state", None)
+        result.append(AttendanceWithUser(**attendance_dict))
     
     return result
+
 
 # 月間勤怠統計（給与計算を含む）
 @router.get("/monthly-stats", response_model=MonthlyAttendanceStats)
 async def get_monthly_attendance_stats(
-    year: int = Query(..., description="年（例：2023）"),
-    month: int = Query(..., description="月（1-12）"),
+    month_params: MonthParams = Depends(),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
+    """月間勤怠統計を取得"""
     # 月の開始日と終了日を計算
-    start_date = date(year, month, 1)
-    _, last_day = calendar.monthrange(year, month)
-    end_date = date(year, month, last_day)
+    start_date = date(month_params.year, month_params.month, 1)
+    _, last_day = calendar.monthrange(month_params.year, month_params.month)
+    end_date = date(month_params.year, month_params.month, last_day)
     
     # 勤怠記録を取得
     records = db.query(Attendance).filter(
@@ -247,41 +257,20 @@ async def get_monthly_attendance_stats(
     overtime_hours = max(0, total_hours - regular_hours)
     
     # 給与の計算
-    hourly_rate = getattr(current_user, 'hourly_rate', 1000)  # デフォルト値として1000円を設定
-    regular_pay = regular_hours * hourly_rate
+    hourly_rate = current_user.hourly_rate
+    regular_pay = min(total_hours, regular_hours) * hourly_rate
     overtime_pay = overtime_hours * hourly_rate * payroll_setting.overtime_rate
     total_salary = regular_pay + overtime_pay
     
-    return {
-        "user_id": current_user.id,
-        "user_full_name": current_user.full_name,
-        "total_days_worked": total_days,
-        "total_working_hours": total_hours,
-        "total_overtime_hours": overtime_hours,
-        "estimated_salary": total_salary
-    }
+    return MonthlyAttendanceStats(
+        user_id=current_user.id,
+        user_full_name=current_user.full_name,
+        total_days_worked=total_days,
+        total_working_hours=total_hours,
+        total_overtime_hours=overtime_hours,
+        estimated_salary=total_salary
+    )
 
-# ユーティリティ関数：勤務時間の計算
-def calculate_working_hours(check_in, check_out, break_start=None, break_end=None):
-    # 総勤務時間（秒）
-    total_seconds = (check_out - check_in).total_seconds()
-    
-    # 休憩時間（秒）
-    break_seconds = 0
-    if break_start and break_end:
-        break_seconds = (break_end - break_start).total_seconds()
-    
-    # 実労働時間（秒）
-    working_seconds = total_seconds - break_seconds
-    
-    # 時間単位に変換（小数点以下2桁まで）
-    working_hours = round(working_seconds / 3600, 2)
-    break_hours = round(break_seconds / 3600, 2)
-    
-    return {
-        "working_hours": working_hours,
-        "break_hours": break_hours
-    }
 
 # 打刻修正申請の作成
 @router.post("/adjustment-request", response_model=TimeAdjustmentRequestResponse)
@@ -290,21 +279,16 @@ async def create_adjustment_request(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
+    """打刻修正申請を作成"""
     # 勤怠記録を取得（存在する場合）
     attendance = None
     if request_data.attendance_id:
         attendance = db.query(Attendance).filter(Attendance.id == request_data.attendance_id).first()
         if not attendance:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="指定された勤怠記録が見つかりません"
-            )
+            raise NotFoundException("勤怠記録", request_data.attendance_id)
         
-        if attendance.user_id != current_user.id and current_user.role != "admin":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="この勤怠記録に対する修正申請を行う権限がありません"
-            )
+        # 所有者チェック
+        check_resource_owner(attendance.user_id, current_user)
     
     # 修正申請の作成
     adjustment_request = TimeAdjustmentRequest(
@@ -316,7 +300,7 @@ async def create_adjustment_request(
         requested_break_start=request_data.requested_break_start,
         requested_break_end=request_data.requested_break_end,
         reason=request_data.reason,
-        status="pending"
+        status=AdjustmentStatus.PENDING
     )
     
     # 既存の勤怠記録がある場合は元の情報を保存
@@ -332,13 +316,15 @@ async def create_adjustment_request(
     
     return adjustment_request
 
+
 # 自分の打刻修正申請一覧を取得
 @router.get("/my-adjustment-requests", response_model=List[TimeAdjustmentRequestResponse])
 async def get_my_adjustment_requests(
-    status: Optional[str] = None,
+    status: Optional[AdjustmentStatus] = Query(None, description="ステータスでフィルタ"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
+    """自分の打刻修正申請一覧を取得"""
     query = db.query(TimeAdjustmentRequest).filter(TimeAdjustmentRequest.user_id == current_user.id)
     
     if status:
@@ -349,14 +335,16 @@ async def get_my_adjustment_requests(
     
     return query.all()
 
+
 # 管理者用：打刻修正申請の一覧取得
 @router.get("/admin/adjustment-requests", response_model=List[TimeAdjustmentRequestResponse])
 async def get_all_adjustment_requests(
-    status: Optional[str] = None,
-    user_id: Optional[int] = None,
+    status: Optional[AdjustmentStatus] = Query(None, description="ステータスでフィルタ"),
+    user_id: Optional[int] = Query(None, description="特定ユーザーでフィルタ"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
+    """全ての打刻修正申請一覧を取得（管理者のみ）"""
     query = db.query(TimeAdjustmentRequest)
     
     if status:
@@ -370,6 +358,7 @@ async def get_all_adjustment_requests(
     
     return query.all()
 
+
 # 管理者用：打刻修正申請の承認/拒否
 @router.put("/admin/adjustment-requests/{request_id}", response_model=TimeAdjustmentRequestResponse)
 async def update_adjustment_request(
@@ -378,16 +367,14 @@ async def update_adjustment_request(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
+    """打刻修正申請を承認/拒否（管理者のみ）"""
     # 修正申請の取得
     adjustment_request = db.query(TimeAdjustmentRequest).filter(
         TimeAdjustmentRequest.id == request_id
     ).first()
     
     if not adjustment_request:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="指定された修正申請が見つかりません"
-        )
+        raise NotFoundException("修正申請", request_id)
     
     # 申請のステータスを更新
     adjustment_request.status = update_data.status
@@ -396,7 +383,7 @@ async def update_adjustment_request(
     adjustment_request.updated_at = datetime.now()
     
     # 承認の場合、勤怠記録を更新
-    if update_data.status == "approved" and adjustment_request.attendance_id:
+    if update_data.status == AdjustmentStatus.APPROVED and adjustment_request.attendance_id:
         attendance = db.query(Attendance).filter(
             Attendance.id == adjustment_request.attendance_id
         ).first()
@@ -429,4 +416,28 @@ async def update_adjustment_request(
     db.commit()
     db.refresh(adjustment_request)
     
-    return adjustment_request 
+    return adjustment_request
+
+
+# ユーティリティ関数：勤務時間の計算
+def calculate_working_hours(check_in, check_out, break_start=None, break_end=None):
+    """勤務時間と休憩時間を計算"""
+    # 総勤務時間（秒）
+    total_seconds = (check_out - check_in).total_seconds()
+    
+    # 休憩時間（秒）
+    break_seconds = 0
+    if break_start and break_end:
+        break_seconds = (break_end - break_start).total_seconds()
+    
+    # 実労働時間（秒）
+    working_seconds = total_seconds - break_seconds
+    
+    # 時間単位に変換（小数点以下2桁まで）
+    working_hours = round(working_seconds / 3600, 2)
+    break_hours = round(break_seconds / 3600, 2)
+    
+    return {
+        "working_hours": working_hours,
+        "break_hours": break_hours
+    }

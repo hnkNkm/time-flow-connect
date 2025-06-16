@@ -1,97 +1,102 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from sqlalchemy.exc import IntegrityError, DataError
 from mangum import Mangum
-from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
-from datetime import datetime
+import logging
+
 from .database import init_db
 from .routers import auth, attendance, shift
-# 一時的にコメントアウト - 問題解決後に戻す
-# from .routers import users, payroll, department, leave, report
+from .core.exceptions import BaseAPIException
+from .core.error_handlers import (
+    base_api_exception_handler,
+    validation_exception_handler,
+    integrity_error_handler,
+    data_error_handler,
+    general_exception_handler
+)
 
-# テスト用の一時的なデータストア
-attendance_records = []
+# ロギング設定
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
-class AttendanceCreate(BaseModel):
-    employee_name: str
-    check_in_time: str
-    memo: Optional[str] = None
-
-class AttendanceResponse(AttendanceCreate):
-    id: str
-
-class ApiResponse(BaseModel):
-    status: str
-    data: Dict[str, Any]
-    message: str
-
+# FastAPIアプリケーションの作成
 app = FastAPI(
     title="TimeFlowConnect API",
     description="Time tracking and shift management API for businesses",
-    version="0.1.0"
+    version="1.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json"
 )
 
 # CORS設定
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://timeflowconnect.com"  # 本番用
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# エラーハンドラーの登録
+app.add_exception_handler(BaseAPIException, base_api_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(IntegrityError, integrity_error_handler)
+app.add_exception_handler(DataError, data_error_handler)
+app.add_exception_handler(Exception, general_exception_handler)
+
 # ルーターの登録
 app.include_router(auth.router)
 app.include_router(attendance.router)
 app.include_router(shift.router)
-# 一時的にコメントアウト - 問題解決後に戻す
+
+# 今後追加予定のルーター
 # app.include_router(users.router)
-# app.include_router(payroll.router)
-# app.include_router(department.router)
 # app.include_router(leave.router)
+# app.include_router(department.router)
+# app.include_router(payroll.router)
 # app.include_router(report.router)
 
 # データベースの初期化
 @app.on_event("startup")
 async def startup_event():
+    """アプリケーション起動時の処理"""
+    logger.info("Starting TimeFlowConnect API...")
     init_db()
+    logger.info("Database initialized successfully")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """アプリケーション終了時の処理"""
+    logger.info("Shutting down TimeFlowConnect API...")
+
+# ヘルスチェックエンドポイント
+@app.get("/api/health")
+async def health_check():
+    """ヘルスチェック"""
+    return {
+        "status": "healthy",
+        "service": "TimeFlowConnect API",
+        "version": "1.0.0"
+    }
 
 # ルートエンドポイント
 @app.get("/")
 async def root():
-    return {"message": "Welcome to TimeFlowConnect API"}
-
-# テスト用APIエンドポイント
-@app.get("/api/hello")
-async def hello():
-    return {"message": "こんにちは！TimeFlowConnectへようこそ！"}
-
-# 勤怠データ登録エンドポイント
-@app.post("/api/attendance", response_model=ApiResponse)
-async def create_attendance(attendance: AttendanceCreate):
-    # 新しいレコードを作成
-    record = {
-        "id": "dummy-id-" + datetime.now().strftime("%Y%m%d%H%M%S"),
-        **attendance.dict()
-    }
-    # テスト用のデータストアに保存
-    attendance_records.append(record)
+    """ルートエンドポイント"""
     return {
-        "status": "success",
-        "data": record,
-        "message": f"{attendance.employee_name}さんの勤怠を登録しました"
+        "message": "Welcome to TimeFlowConnect API",
+        "docs": "/api/docs",
+        "health": "/api/health"
     }
-
-# 勤怠データ取得エンドポイント
-@app.get("/api/attendance", response_model=List[AttendanceResponse])
-async def get_attendance():
-    return attendance_records
 
 # AWS Lambda用ハンドラー
 handler = Mangum(app)
-
-# ルーターのインポートと登録は実装後に追加
-# from .routers import users, attendance, leave_requests
-# app.include_router(users.router)
-# app.include_router(attendance.router)
-# app.include_router(leave_requests.router) 
