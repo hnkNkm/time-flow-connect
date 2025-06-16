@@ -15,4 +15,5 @@ mangum==0.17.0
 aws-cdk-lib==2.110.0
 constructs>=10.0.0
 aws-cdk.aws-lambda-python-alpha==2.110.0a0
-email-validator==2.1.0 
+email-validator==2.1.0
+pyyaml==6.0.1 

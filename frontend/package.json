@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate:api": "npm run generate:openapi && npm run generate:types",
+    "generate:openapi": "node ../scripts/generate-openapi.mjs",
+    "generate:types": "docker run --rm -v \"${PWD}/..:/local\" openapitools/openapi-generator-cli:v7.2.0 generate -i /local/openapi.json -g typescript-axios -o /local/frontend/src/api/generated --additional-properties=withSeparateModelsAndApi=true,apiPackage=api,modelPackage=models"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",

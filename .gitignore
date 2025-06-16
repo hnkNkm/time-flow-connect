@@ -50,3 +50,8 @@ volume/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# OpenAPI Generated Files
+openapi.json
+openapi.yaml
+frontend/src/api/generated/
