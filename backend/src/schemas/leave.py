@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime, date
 from enum import Enum
+from .base import BaseResponse, AdminActionMixin, UserInfoMixin, OrmConfigMixin
 
 class LeaveType(str, Enum):
     PAID = "paid"           # 有給休暇
@@ -37,31 +38,17 @@ class LeaveUpdate(BaseModel):
     status: Optional[LeaveStatus] = None
     admin_comment: Optional[str] = None
 
-class LeaveResponse(LeaveBase):
-    id: int
+class LeaveResponse(LeaveBase, BaseResponse, AdminActionMixin):
     days_count: float
-    admin_id: Optional[int] = None
-    admin_comment: Optional[str] = None
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    
-    class Config:
-        orm_mode = True
 
-class LeaveWithUser(LeaveResponse):
-    user_full_name: str
+class LeaveWithUser(LeaveResponse, UserInfoMixin):
     admin_full_name: Optional[str] = None
 
-class LeaveBalance(BaseModel):
-    user_id: int
-    user_full_name: str
+class LeaveBalance(UserInfoMixin, OrmConfigMixin):
     total_paid_leave: float       # 付与されている有給日数
     used_paid_leave: float        # 使用済み有給日数
     remaining_paid_leave: float   # 残りの有給日数
     upcoming_paid_leave: float    # 承認待ちの有給日数
-    
-    class Config:
-        orm_mode = True
 
 class LeaveBalanceUpdate(BaseModel):
     user_id: int
@@ -69,16 +56,8 @@ class LeaveBalanceUpdate(BaseModel):
     effective_date: date = Field(default_factory=date.today)
     reason: Optional[str] = None
     
-class LeaveAllocation(BaseModel):
-    id: int
-    user_id: int
-    user_full_name: str
+class LeaveAllocation(BaseResponse, UserInfoMixin):
     allocated_days: float
     effective_date: date
     expiry_date: Optional[date] = None
-    reason: Optional[str] = None
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    
-    class Config:
-        orm_mode = True 
+    reason: Optional[str] = None 

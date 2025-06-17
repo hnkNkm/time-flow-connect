@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field, computed_field
 from typing import Optional
 from datetime import datetime
+from .base import BaseResponse
 
 class Token(BaseModel):
     access_token: str
@@ -26,21 +27,14 @@ class UserUpdate(BaseModel):
     is_admin: Optional[bool] = None
     hourly_rate: Optional[float] = None
 
-class UserResponse(UserBase):
-    id: int
+class UserResponse(UserBase, BaseResponse):
     role: str
     is_active: bool
     force_password_change: bool
-    created_at: datetime
-    updated_at: Optional[datetime] = None
 
     @computed_field
     def is_admin(self) -> bool:
         return self.role == "admin"
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
 
 class ChangePasswordRequest(BaseModel):
     current_password: str

@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
 from datetime import datetime, date, time
 from enum import Enum
+from .base import BaseResponse, AdminActionMixin, UserInfoMixin
 
 class ShiftStatus(str, Enum):
     PENDING = "pending"     # 希望提出済み（確定前）
@@ -37,18 +38,11 @@ class ShiftUpdate(BaseModel):
     memo: Optional[str] = None
     status: Optional[ShiftStatus] = None
 
-class ShiftResponse(ShiftBase):
-    id: int
+class ShiftResponse(ShiftBase, BaseResponse, AdminActionMixin):
     status: ShiftStatus
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    admin_comment: Optional[str] = None
-    
-    class Config:
-        orm_mode = True
 
-class ShiftWithUser(ShiftResponse):
-    user_full_name: str
+class ShiftWithUser(ShiftResponse, UserInfoMixin):
+    pass
 
 class ShiftTemplate(BaseModel):
     name: str
@@ -59,13 +53,8 @@ class ShiftTemplate(BaseModel):
 class ShiftTemplateCreate(ShiftTemplate):
     pass
 
-class ShiftTemplateResponse(ShiftTemplate):
-    id: int
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    
-    class Config:
-        orm_mode = True
+class ShiftTemplateResponse(ShiftTemplate, BaseResponse):
+    pass
 
 class MonthlyShiftRequest(BaseModel):
     year: int
