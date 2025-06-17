@@ -6,7 +6,7 @@ from datetime import datetime, date, time, timedelta
 import calendar
 
 from ..database import get_db
-from ..models.models import Shift, User, ShiftTemplate
+from ..models.models import Shift, User, ShiftTemplate, PayrollSetting
 from ..schemas.shift import (
     ShiftCreate,
     ShiftUpdate,
@@ -460,6 +460,109 @@ async def delete_shift(
 #     db.delete(shift)
 #     db.commit()
 #     return
+
+# 月間の確定シフトから見込み給与を計算
+@router.get("/estimated-salary/{year}/{month}")
+async def get_estimated_salary(
+    year: int,
+    month: int,
+    user_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    # 管理者でない場合は自分の情報のみ取得可能
+    if current_user.role != "admin" and user_id and user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="他のユーザーの情報を取得する権限がありません"
+        )
+    
+    # 対象ユーザーの決定
+    target_user_id = user_id if user_id else current_user.id
+    
+    # 対象ユーザーの情報を取得
+    target_user = db.query(User).filter(User.id == target_user_id).first()
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="ユーザーが見つかりません"
+        )
+    
+    # 月の開始日と終了日を計算
+    start_date = date(year, month, 1)
+    if month == 12:
+        end_date = date(year + 1, 1, 1) - timedelta(days=1)
+    else:
+        end_date = date(year, month + 1, 1) - timedelta(days=1)
+    
+    # 確定済みシフトを取得
+    confirmed_shifts = db.query(Shift).filter(
+        Shift.user_id == target_user_id,
+        Shift.status == "confirmed",
+        Shift.date >= start_date,
+        Shift.date <= end_date
+    ).all()
+    
+    # デバッグ用ログ
+    print(f"確定済みシフト検索条件: user_id={target_user_id}, start_date={start_date}, end_date={end_date}")
+    print(f"取得した確定済みシフト数: {len(confirmed_shifts)}")
+    for shift in confirmed_shifts:
+        print(f"  - {shift.date}: {shift.status}")
+    
+    # 給与設定を取得
+    payroll_setting = db.query(PayrollSetting).first()
+    if not payroll_setting:
+        payroll_setting = PayrollSetting(
+            overtime_rate=1.25,
+            night_shift_rate=1.25,
+            holiday_rate=1.35,
+            regular_hours_per_day=8
+        )
+    
+    # 時給を取得（デフォルト1000円）
+    hourly_rate = getattr(target_user, 'hourly_rate', 1000)
+    
+    # 合計勤務時間を計算
+    total_hours = 0
+    total_days = len(confirmed_shifts)
+    
+    for shift in confirmed_shifts:
+        if shift.start_time and shift.end_time:
+            # 時間の差を計算
+            start_datetime = datetime.combine(shift.date, shift.start_time)
+            end_datetime = datetime.combine(shift.date, shift.end_time)
+            
+            # 日をまたぐシフトの場合
+            if end_datetime < start_datetime:
+                end_datetime += timedelta(days=1)
+            
+            duration = end_datetime - start_datetime
+            hours = duration.total_seconds() / 3600
+            total_hours += hours
+    
+    # 残業時間の計算
+    regular_hours = total_days * payroll_setting.regular_hours_per_day
+    overtime_hours = max(0, total_hours - regular_hours)
+    
+    # 給与の計算
+    regular_pay = regular_hours * hourly_rate
+    overtime_pay = overtime_hours * hourly_rate * payroll_setting.overtime_rate
+    total_salary = regular_pay + overtime_pay
+    
+    return {
+        "year": year,
+        "month": month,
+        "user_id": target_user_id,
+        "user_name": target_user.full_name,
+        "confirmed_shifts_count": total_days,
+        "total_hours": round(total_hours, 2),
+        "regular_hours": round(regular_hours, 2),
+        "overtime_hours": round(overtime_hours, 2),
+        "hourly_rate": hourly_rate,
+        "regular_pay": int(regular_pay),
+        "overtime_pay": int(overtime_pay),
+        "estimated_salary": int(total_salary)
+    }
 
 # ここに他のエンドポイントが続く... (get_my_shifts, get_all_shifts など)
 # ... existing code ... 

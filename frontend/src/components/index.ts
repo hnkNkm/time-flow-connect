@@ -11,4 +11,5 @@ export { default as MonthlyStats } from "./MonthlyStats";
 export { default as TeamSummary } from "./TeamSummary";
 export { default as ShiftCalendar } from "./ShiftCalendar";
 export { default as ShiftDialog } from "./ShiftDialog";
+export { default as EstimatedSalary } from "./EstimatedSalary";
 export type { ShiftRecord, CalendarEvent } from "./ShiftCalendar";

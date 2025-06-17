@@ -16,6 +16,7 @@ import ShiftManagementPage from "./pages/ShiftManagementPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./App.css";
+import "./styles/estimatedSalary.css";
 
 // プライベートルート（認証が必要なルート）
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {

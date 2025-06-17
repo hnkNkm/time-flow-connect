@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { attendanceAPI } from "../services/api";
+import { attendanceAPI, shiftAPI } from "../services/api";
 import {
   DateSelector,
   MonthlyStats,
   AttendanceTable,
   LoadingSpinner,
   ErrorMessage,
+  EstimatedSalary,
 } from "../components";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
 
 interface AttendanceRecord {
   id: number;
@@ -30,6 +33,7 @@ const MonthlyAttendancePage: React.FC = () => {
   const [month, setMonth] = useState<number>(new Date().getMonth() + 1);
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [stats, setStats] = useState<MonthlyStatsData | null>(null);
+  const [estimatedSalary, setEstimatedSalary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +53,18 @@ const MonthlyAttendancePage: React.FC = () => {
         // 月間統計の取得
         const statsResponse = await attendanceAPI.getMonthlyStats(year, month);
         setStats(statsResponse.data);
+
+        // シフトベースの見込み給与を取得
+        try {
+          const estimatedResponse = await shiftAPI.getEstimatedSalary(year, month);
+          console.log("見込み給与レスポンス:", estimatedResponse.data);
+          setEstimatedSalary(estimatedResponse.data);
+        } catch (estimatedErr: any) {
+          console.error("見込み給与データ取得エラー:", estimatedErr);
+          console.error("エラー詳細:", estimatedErr.response?.data);
+          // 見込み給与の取得に失敗しても他のデータは表示
+          setEstimatedSalary(null);
+        }
       } catch (err) {
         console.error("月間勤怠データ取得エラー:", err);
         setError("月間勤怠データの取得に失敗しました");
@@ -85,14 +101,23 @@ const MonthlyAttendancePage: React.FC = () => {
 
       {!loading && (
         <>
-          {/* 月間統計 */}
-          {stats && <MonthlyStats stats={stats} />}
+          {/* 統計情報 */}
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              {/* 実績の月間統計 */}
+              {stats && <MonthlyStats stats={stats} />}
+            </Grid>
+            <Grid item xs={12} md={6}>
+              {/* シフトベースの見込み給与 */}
+              <EstimatedSalary data={estimatedSalary} />
+            </Grid>
+          </Grid>
 
           {/* 月間勤怠記録一覧 */}
-          <div className="monthly-records">
+          <Box mt={3}>
             <h3>勤怠記録</h3>
             <AttendanceTable records={records} />
-          </div>
+          </Box>
         </>
       )}
     </div>
