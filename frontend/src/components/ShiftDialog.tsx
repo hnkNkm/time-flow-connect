@@ -19,10 +19,13 @@ interface ShiftDialogProps {
     memo?: string;
   };
   shiftId?: number;
+  shiftStatus?: string;
+  isMyShift?: boolean;
   onClose: () => void;
   onSubmit: (e: React.FormEvent, formData?: any) => void;
   onApprove?: () => void;
   onReject?: () => void;
+  onDelete?: () => void;
   onChange?: (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -38,10 +41,13 @@ const ShiftDialog: React.FC<ShiftDialogProps> = ({
   contentText,
   mode,
   formData = {},
+  shiftStatus,
+  isMyShift = false,
   onClose,
   onSubmit,
   onApprove,
   onReject,
+  onDelete,
   onChange,
   useDateTime = false,
   selectedDates,
@@ -118,9 +124,16 @@ const ShiftDialog: React.FC<ShiftDialogProps> = ({
       </DialogContent>
       <DialogActions>
         {mode === "view" && (
-          <Button onClick={onClose} color="primary">
-            閉じる
-          </Button>
+          <>
+            {isMyShift && shiftStatus === "pending" && onDelete && (
+              <Button onClick={onDelete} color="error">
+                削除
+              </Button>
+            )}
+            <Button onClick={onClose} color="primary">
+              閉じる
+            </Button>
+          </>
         )}
 
         {mode === "register" && (
@@ -145,6 +158,11 @@ const ShiftDialog: React.FC<ShiftDialogProps> = ({
             <Button onClick={onClose} color="secondary">
               キャンセル
             </Button>
+            {onReject && (
+              <Button onClick={onReject} color="error">
+                却下
+              </Button>
+            )}
             <Button onClick={onApprove} color="primary" variant="contained">
               承認
             </Button>
