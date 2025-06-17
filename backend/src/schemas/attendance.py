@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
+from .base import BaseResponse, AdminActionMixin, UserInfoMixin, OrmConfigMixin
 
 class AttendanceBase(BaseModel):
     check_in_time: datetime
@@ -18,19 +19,14 @@ class AttendanceUpdate(BaseModel):
     break_end_time: Optional[datetime] = None
     memo: Optional[str] = None
 
-class AttendanceResponse(AttendanceBase):
-    id: int
+class AttendanceResponse(AttendanceBase, BaseResponse):
     user_id: int
     total_working_hours: Optional[float] = None
     total_break_hours: Optional[float] = None
-    created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
-
-class AttendanceWithUser(AttendanceResponse):
-    user_full_name: str
+class AttendanceWithUser(AttendanceResponse, UserInfoMixin):
+    pass
 
 class MonthlyAttendanceStats(BaseModel):
     user_id: int
@@ -40,7 +36,13 @@ class MonthlyAttendanceStats(BaseModel):
     total_overtime_hours: float
     estimated_salary: float
 
-class TimeAdjustmentRequest(BaseModel):
+class TimeFields(BaseModel):
+    check_in: Optional[datetime] = None
+    check_out: Optional[datetime] = None
+    break_start: Optional[datetime] = None
+    break_end: Optional[datetime] = None
+
+class TimeAdjustmentRequest(OrmConfigMixin):
     attendance_id: Optional[int] = None
     user_id: int
     request_date: datetime
@@ -54,9 +56,6 @@ class TimeAdjustmentRequest(BaseModel):
     requested_break_end: Optional[datetime] = None
     reason: str
     status: str = "pending"  # pending, approved, rejected
-    
-    class Config:
-        orm_mode = True
 
 class TimeAdjustmentRequestCreate(BaseModel):
     attendance_id: Optional[int] = None
@@ -71,9 +70,5 @@ class TimeAdjustmentRequestUpdate(BaseModel):
     status: str
     admin_comment: Optional[str] = None
     
-class TimeAdjustmentRequestResponse(TimeAdjustmentRequest):
-    id: int
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    admin_comment: Optional[str] = None
-    admin_id: Optional[int] = None 
+class TimeAdjustmentRequestResponse(TimeAdjustmentRequest, BaseResponse, AdminActionMixin):
+    pass 

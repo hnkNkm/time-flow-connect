@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
+from .base import BaseResponse, OrmConfigMixin
 
 class DepartmentBase(BaseModel):
     name: str
@@ -16,14 +17,8 @@ class DepartmentUpdate(BaseModel):
     location: Optional[str] = None
     is_active: Optional[bool] = None
 
-class DepartmentResponse(DepartmentBase):
-    id: int
+class DepartmentResponse(DepartmentBase, BaseResponse):
     is_active: bool
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    
-    class Config:
-        orm_mode = True
 
 class DepartmentWithUsers(DepartmentResponse):
     user_count: int
@@ -32,11 +27,8 @@ class UserDepartmentAssign(BaseModel):
     user_id: int
     department_id: int
 
-class UserDepartmentResponse(BaseModel):
+class UserDepartmentResponse(OrmConfigMixin):
     user_id: int
     department_id: int
     user_name: str
-    department_name: str
-    
-    class Config:
-        orm_mode = True 
+    department_name: str 

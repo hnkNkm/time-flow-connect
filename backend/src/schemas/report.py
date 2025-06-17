@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime, date
+from .base import BaseResponse, UserInfoMixin
 
 class ReportBase(BaseModel):
     user_id: int
@@ -23,13 +24,8 @@ class ReportUpdate(BaseModel):
     tasks_planned: Optional[str] = None
     issues: Optional[str] = None
 
-class ReportResponse(ReportBase):
-    id: int
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    
-    class Config:
-        orm_mode = True
+class ReportResponse(ReportBase, BaseResponse):
+    pass
 
-class ReportWithUser(ReportResponse):
-    user_full_name: str 
+class ReportWithUser(ReportResponse, UserInfoMixin):
+    pass 
