@@ -179,4 +179,9 @@ export const shiftAPI = {
   bulkApproveShifts: async (data: { shifts: number[]; status: string; admin_comment?: string }) => {
     return api.put("/api/shifts/admin/confirm", data);
   },
+
+  getEstimatedSalary: async (year: number, month: number, userId?: number) => {
+    const params = userId ? { user_id: userId } : {};
+    return api.get(`/api/shifts/estimated-salary/${year}/${month}`, { params });
+  },
 };

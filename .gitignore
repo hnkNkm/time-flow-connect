@@ -55,3 +55,7 @@ volume/
 openapi.json
 openapi.yaml
 frontend/src/api/generated/
+
+# Personal configuration files
+claude_config.json
+cursor-keybindings-guide.md
