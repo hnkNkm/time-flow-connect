@@ -74,6 +74,8 @@ const ShiftManagementPage: React.FC = () => {
   const [shiftToDelete, setShiftToDelete] = useState<number | null>(null); // 削除対象のシフトID
   const [bulkApprovalOpen, setBulkApprovalOpen] = useState(false); // 一括承認ダイアログの開閉状態
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null); // 一括承認対象のユーザーID
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "confirmed" | "rejected">("all"); // ステータスフィルター
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc"); // ソート順（desc: 新しい順）
 
   // シフト登録フォーム用のステート
   const [formData, setFormData] = useState({
@@ -108,10 +110,15 @@ const ShiftManagementPage: React.FC = () => {
     setError(null);
     try {
       // 自分のシフトを取得
-      const myResponse = await shiftAPI.getMyShifts({
+      const myParams: any = {
         start_date: startDate,
         end_date: endDate,
-      });
+        sort_order: sortOrder,
+      };
+      if (statusFilter !== "all") {
+        myParams.status = statusFilter;
+      }
+      const myResponse = await shiftAPI.getMyShifts(myParams);
       setMyShifts(myResponse.data);
 
       // 自分のシフトをカレンダーイベントに変換
@@ -143,10 +150,15 @@ const ShiftManagementPage: React.FC = () => {
       );
 
       if (isAdmin) {
-        const allResponse = await shiftAPI.getAllShifts({
+        const allParams: any = {
           start_date: startDate,
           end_date: endDate,
-        });
+          sort_order: sortOrder,
+        };
+        if (statusFilter !== "all") {
+          allParams.status = statusFilter;
+        }
+        const allResponse = await shiftAPI.getAllShifts(allParams);
         setShifts(allResponse.data);
         const events = allResponse.data.map(
           (shift: ShiftRecord): CalendarEvent => {
@@ -189,7 +201,7 @@ const ShiftManagementPage: React.FC = () => {
 
   useEffect(() => {
     fetchAndSetShifts();
-  }, [startDate, endDate, isAdmin, user]);
+  }, [startDate, endDate, isAdmin, user, statusFilter, sortOrder]);
 
   // フォーム入力の処理
   const handleChange = (
@@ -822,7 +834,35 @@ const ShiftManagementPage: React.FC = () => {
 
       {/* 自分のシフト一覧 */}
       <div className="my-shifts">
-        <h3>自分のシフト</h3>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <h3>自分のシフト</h3>
+          <Box display="flex" gap={2}>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>ステータス</InputLabel>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                label="ステータス"
+              >
+                <MenuItem value="all">すべて</MenuItem>
+                <MenuItem value="pending">申請中</MenuItem>
+                <MenuItem value="confirmed">確定</MenuItem>
+                <MenuItem value="rejected">却下</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>並び順</InputLabel>
+              <Select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                label="並び順"
+              >
+                <MenuItem value="desc">新しい順</MenuItem>
+                <MenuItem value="asc">古い順</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
 
         {myShifts.length === 0 ? (
           <div className="no-records">
@@ -888,14 +928,40 @@ const ShiftManagementPage: React.FC = () => {
         <div className="all-shifts">
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
             <h3>全員のシフト</h3>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => setBulkApprovalOpen(true)}
-              disabled={loading || shifts.filter(s => s.status === "pending").length === 0}
-            >
-              一括承認
-            </Button>
+            <Box display="flex" gap={2} alignItems="center">
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel>ステータス</InputLabel>
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  label="ステータス"
+                >
+                  <MenuItem value="all">すべて</MenuItem>
+                  <MenuItem value="pending">申請中</MenuItem>
+                  <MenuItem value="confirmed">確定</MenuItem>
+                  <MenuItem value="rejected">却下</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel>並び順</InputLabel>
+                <Select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                  label="並び順"
+                >
+                  <MenuItem value="desc">新しい順</MenuItem>
+                  <MenuItem value="asc">古い順</MenuItem>
+                </Select>
+              </FormControl>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setBulkApprovalOpen(true)}
+                disabled={loading || shifts.filter(s => s.status === "pending").length === 0}
+              >
+                一括承認
+              </Button>
+            </Box>
           </Box>
 
           {shifts.length === 0 ? (
