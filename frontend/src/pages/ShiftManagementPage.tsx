@@ -3,18 +3,10 @@ import { SlotInfo } from "react-big-calendar";
 import {
   setHours,
   setMinutes,
-  setSeconds,
-  setMilliseconds,
   addHours,
 } from "date-fns";
 import parse from "date-fns/parse";
 import format from "date-fns/format";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
@@ -72,16 +64,20 @@ const ShiftManagementPage: React.FC = () => {
     break_time: 60, // デフォルト60分
     memo: "",
   });
+  
+  // 複数日選択用のステート
+  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+  const [isMultiDaySelection, setIsMultiDaySelection] = useState(false);
 
   // 日付範囲のステート
-  const [startDate, setStartDate] = useState(() => {
+  const [startDate] = useState(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1)
       .toISOString()
       .split("T")[0];
   });
 
-  const [endDate, setEndDate] = useState(() => {
+  const [endDate] = useState(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth() + 1, 0)
       .toISOString()
@@ -191,20 +187,37 @@ const ShiftManagementPage: React.FC = () => {
       [name]: value,
     };
 
-    // 開始時刻が変更され、値が有効な場合
-    if (name === "start_time" && value) {
-      try {
-        const startDate = new Date(value);
-        if (!isNaN(startDate.getTime())) {
-          // 開始時刻から8時間後の日時を計算
-          const endDate = new Date(startDate.getTime() + 8 * 60 * 60 * 1000);
-          // YYYY-MM-DDTHH:mm 形式にフォーマット
-          const formattedEndDate = format(endDate, "yyyy-MM-dd'T'HH:mm");
-          // 終了時刻を更新
-          newFormData.end_time = formattedEndDate;
+    // 複数日選択モードの場合は時間のみ処理
+    if (isMultiDaySelection) {
+      // 開始時刻が変更された場合、8時間後を終了時刻に設定
+      if (name === "start_time" && value) {
+        const [hour, minute] = value.split(":").map(Number);
+        let endHour = hour + 8;
+        const endMinute = minute;
+        
+        // 24時間を超える場合は翌日にラップ
+        if (endHour >= 24) {
+          endHour = endHour - 24;
         }
-      } catch (err) {
-        console.error("開始時刻の処理中にエラーが発生しました:", err);
+        
+        newFormData.end_time = `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
+      }
+    } else {
+      // 単一日選択モードの場合は従来の処理
+      if (name === "start_time" && value) {
+        try {
+          const startDate = new Date(value);
+          if (!isNaN(startDate.getTime())) {
+            // 開始時刻から8時間後の日時を計算
+            const endDate = new Date(startDate.getTime() + 8 * 60 * 60 * 1000);
+            // YYYY-MM-DDTHH:mm 形式にフォーマット
+            const formattedEndDate = format(endDate, "yyyy-MM-dd'T'HH:mm");
+            // 終了時刻を更新
+            newFormData.end_time = formattedEndDate;
+          }
+        } catch (err) {
+          console.error("開始時刻の処理中にエラーが発生しました:", err);
+        }
       }
     }
 
@@ -405,12 +418,12 @@ const ShiftManagementPage: React.FC = () => {
     let selectedStartTime = slotInfo.start;
     let selectedEndTime = slotInfo.end;
 
-    // デバッグ用ログ
-    // console.log("Selected slot start:", selectedStartTime);
-    // console.log("Selected slot end:", selectedEndTime);
-
+    // 複数日選択かどうかの判定
+    const startDay = selectedStartTime.getDate();
+    const endDay = selectedEndTime.getDate();
+    const daysDiff = Math.floor((selectedEndTime.getTime() - selectedStartTime.getTime()) / (24 * 60 * 60 * 1000));
+    
     // 日付のみ選択されたか、または選択範囲が非常に短い（日跨ぎでない）場合の判定
-    // endがstartの翌日0時になっている場合や、startとendの時刻が同じ場合は日付のみ選択とみなす
     const isDateOnlyClick =
       (selectedEndTime.getDate() === selectedStartTime.getDate() + 1 &&
         selectedEndTime.getHours() === 0 &&
@@ -419,24 +432,62 @@ const ShiftManagementPage: React.FC = () => {
         selectedEndTime.getHours() === selectedStartTime.getHours() &&
         selectedEndTime.getMinutes() === selectedStartTime.getMinutes());
 
-    if (isDateOnlyClick) {
-      // 日付のみクリックされた場合、デフォルトの勤務時間 (例: 9:00 - 17:00) を設定
-      selectedStartTime = setHours(selectedStartTime, 9);
-      selectedStartTime = setMinutes(selectedStartTime, 0);
-      // 終了時刻を開始時刻の8時間後に設定
-      selectedEndTime = addHours(selectedStartTime, 8);
+    // 複数日選択の判定（2日以上の日付範囲が選択された場合）
+    if (daysDiff >= 1 || (startDay !== endDay && !isDateOnlyClick)) {
+      // 複数日選択モード
+      setIsMultiDaySelection(true);
+      
+      // 選択された日付のリストを作成
+      const dates: Date[] = [];
+      const currentDate = new Date(selectedStartTime);
+      currentDate.setHours(0, 0, 0, 0);
+      
+      const endDate = new Date(selectedEndTime);
+      endDate.setHours(0, 0, 0, 0);
+      
+      // 終了日が0時の場合は前日までとする
+      if (selectedEndTime.getHours() === 0 && selectedEndTime.getMinutes() === 0) {
+        endDate.setDate(endDate.getDate() - 1);
+      }
+      
+      while (currentDate <= endDate) {
+        dates.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      setSelectedDates(dates);
+      
+      // 時間のみの入力用にフォームを初期化（デフォルト: 9:00-17:00）
+      setFormData((prevData) => ({
+        ...prevData,
+        start_time: "09:00",
+        end_time: "17:00",
+      }));
+    } else {
+      // 単一日選択モード
+      setIsMultiDaySelection(false);
+      setSelectedDates([selectedStartTime]);
+      
+      if (isDateOnlyClick) {
+        // 日付のみクリックされた場合、デフォルトの勤務時間 (例: 9:00 - 17:00) を設定
+        selectedStartTime = setHours(selectedStartTime, 9);
+        selectedStartTime = setMinutes(selectedStartTime, 0);
+        // 終了時刻を開始時刻の8時間後に設定
+        selectedEndTime = addHours(selectedStartTime, 8);
+      }
+
+      // フォームの datetime-local input が要求する形式 (YYYY-MM-DDTHH:mm) にフォーマット
+      const formattedStartTime = format(selectedStartTime, "yyyy-MM-dd'T'HH:mm");
+      const formattedEndTime = format(selectedEndTime, "yyyy-MM-dd'T'HH:mm");
+
+      // フォームデータを更新
+      setFormData((prevData) => ({
+        ...prevData,
+        start_time: formattedStartTime,
+        end_time: formattedEndTime,
+      }));
     }
-
-    // フォームの datetime-local input が要求する形式 (YYYY-MM-DDTHH:mm) にフォーマット
-    const formattedStartTime = format(selectedStartTime, "yyyy-MM-dd'T'HH:mm");
-    const formattedEndTime = format(selectedEndTime, "yyyy-MM-dd'T'HH:mm");
-
-    // フォームデータを更新
-    setFormData((prevData) => ({
-      ...prevData,
-      start_time: formattedStartTime,
-      end_time: formattedEndTime,
-    }));
+    
     // 登録ダイアログを開く
     setIsRegisterDialogOpen(true);
   };
@@ -445,42 +496,126 @@ const ShiftManagementPage: React.FC = () => {
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("登録ダイアログでのSubmit処理開始");
-
-    // バリデーション（handleSubmitと同じロジック）
-    const startTimeString = formData.start_time;
-    const endTimeString = formData.end_time;
-
-    console.log("フォームデータ:", formData);
+    setLoading(true);
+    setError(null);
 
     try {
-      if (startTimeString && endTimeString) {
-        const startDateTime = new Date(startTimeString);
-        const endDateTime = new Date(endTimeString);
-
-        // 開始時刻が終了時刻より後の場合はエラー
-        if (startDateTime >= endDateTime) {
-          console.error(
-            "時間バリデーションエラー:",
-            startDateTime,
-            endDateTime
-          );
-          setError("終了時刻は開始時刻より後に設定してください。");
+      if (isMultiDaySelection) {
+        // 複数日選択の場合
+        const startTime = formData.start_time; // "HH:mm" 形式
+        const endTime = formData.end_time; // "HH:mm" 形式
+        
+        if (!startTime || !endTime) {
+          setError("開始時刻と終了時刻を入力してください。");
+          setLoading(false);
           return;
         }
-      }
-    } catch (err) {
-      console.error("日時の検証中にエラーが発生しました:", err);
-      setError("日時のフォーマットが正しくありません。");
-      return;
-    }
 
-    await handleSubmit(e);
-    setIsRegisterDialogOpen(false);
+        // 時間のバリデーション
+        const [startHour, startMin] = startTime.split(":").map(Number);
+        const [endHour, endMin] = endTime.split(":").map(Number);
+        
+        // 同じ日の終了時刻が開始時刻より前の場合はエラー
+        if (endHour < startHour || (endHour === startHour && endMin <= startMin)) {
+          // 日をまたぐシフトでない限りエラー
+          if (endHour >= startHour) {
+            setError("終了時刻は開始時刻より後に設定してください。");
+            setLoading(false);
+            return;
+          }
+        }
+
+        // 各日付に対してシフトを登録
+        const shiftDataArray = selectedDates.map((date) => {
+          const dateString = format(date, "yyyy-MM-dd");
+          
+          // 日をまたぐシフトかどうかを判定
+          let adjustedEndTime = endTime;
+          let isOvernightShift = false;
+          
+          if (endHour < startHour || (endHour === startHour && endMin < startMin)) {
+            isOvernightShift = true;
+          }
+          
+          return {
+            date: dateString,
+            start_time: startTime,
+            end_time: adjustedEndTime,
+            memo: formData.memo || null
+          };
+        });
+
+        console.log("複数日シフト登録データ:", shiftDataArray);
+
+        // バルクAPIを使用して一括登録
+        const bulkData = {
+          year: selectedDates[0].getFullYear(),
+          month: selectedDates[0].getMonth() + 1,
+          shifts: shiftDataArray.map(shift => ({
+            date: shift.date,
+            start_time: shift.start_time,
+            end_time: shift.end_time,
+            memo: shift.memo,
+            availability: "available"
+          }))
+        };
+        const response = await shiftAPI.bulkRegisterShifts(bulkData);
+        console.log("複数日シフト登録成功:", response);
+
+        // フォームをリセット
+        setFormData({
+          start_time: "",
+          end_time: "",
+          break_time: 60,
+          memo: "",
+        });
+        setSelectedDates([]);
+        setIsMultiDaySelection(false);
+
+        // カレンダーを更新
+        await fetchAndSetShifts();
+        setIsRegisterDialogOpen(false);
+      } else {
+        // 単一日選択の場合は従来の処理
+        const startTimeString = formData.start_time;
+        const endTimeString = formData.end_time;
+
+        try {
+          if (startTimeString && endTimeString) {
+            const startDateTime = new Date(startTimeString);
+            const endDateTime = new Date(endTimeString);
+
+            if (startDateTime >= endDateTime) {
+              setError("終了時刻は開始時刻より後に設定してください。");
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (err) {
+          console.error("日時の検証中にエラーが発生しました:", err);
+          setError("日時のフォーマットが正しくありません。");
+          setLoading(false);
+          return;
+        }
+
+        await handleSubmit(e);
+        setIsRegisterDialogOpen(false);
+      }
+    } catch (err: any) {
+      console.error("シフト登録エラー:", err);
+      setError(
+        err.response?.data?.detail?.[0]?.msg ||
+          err.response?.data?.detail ||
+          "シフトの登録に失敗しました"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 表示モード切り替えハンドラ
   const handleViewModeChange = (
-    event: React.MouseEvent<HTMLElement>,
+    _event: React.MouseEvent<HTMLElement>,
     newViewMode: "my" | "all" | null // null許容にする
   ) => {
     if (newViewMode !== null) {
@@ -722,7 +857,7 @@ const ShiftManagementPage: React.FC = () => {
               : "view"
           }
           onClose={() => setIsModalOpen(false)}
-          onSubmit={(e) => {}} // ダミー関数、view/approve モードでは使用しない
+          onSubmit={(_e) => {}} // ダミー関数、view/approve モードでは使用しない
           onApprove={handleApproveClick}
           onReject={handleRejectClick}
         />
@@ -731,14 +866,26 @@ const ShiftManagementPage: React.FC = () => {
       {/* シフト登録ダイアログ */}
       <ShiftDialog
         open={isRegisterDialogOpen}
-        title="シフト登録"
-        contentText="勤務時間を設定してください。"
+        title={isMultiDaySelection ? "複数日シフト登録" : "シフト登録"}
+        contentText={
+          isMultiDaySelection
+            ? `${format(selectedDates[0], "M/d")}〜${format(
+                selectedDates[selectedDates.length - 1],
+                "M/d"
+              )} の${selectedDates.length}日間に同じ時間でシフトを登録します。`
+            : "勤務時間を設定してください。"
+        }
         mode="register"
         formData={formData}
-        onClose={() => setIsRegisterDialogOpen(false)}
+        onClose={() => {
+          setIsRegisterDialogOpen(false);
+          setSelectedDates([]);
+          setIsMultiDaySelection(false);
+        }}
         onSubmit={handleRegisterSubmit}
         onChange={handleChange}
-        useDateTime={true}
+        useDateTime={!isMultiDaySelection}
+        selectedDates={isMultiDaySelection ? selectedDates : undefined}
       />
     </div>
   );

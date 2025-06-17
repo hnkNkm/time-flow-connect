@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -29,6 +29,7 @@ interface ShiftDialogProps {
     >
   ) => void;
   useDateTime?: boolean;
+  selectedDates?: Date[];
 }
 
 const ShiftDialog: React.FC<ShiftDialogProps> = ({
@@ -37,13 +38,13 @@ const ShiftDialog: React.FC<ShiftDialogProps> = ({
   contentText,
   mode,
   formData = {},
-  shiftId,
   onClose,
   onSubmit,
   onApprove,
   onReject,
   onChange,
   useDateTime = false,
+  selectedDates,
 }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -54,7 +55,9 @@ const ShiftDialog: React.FC<ShiftDialogProps> = ({
         {mode === "register" && onChange && (
           <form id="shift-form" className="shift-form">
             <div className="form-group">
-              <label htmlFor="start_time">開始時間</label>
+              <label htmlFor="start_time">
+                {selectedDates && selectedDates.length > 1 ? "開始時間（各日共通）" : "開始時間"}
+              </label>
               <input
                 type={useDateTime ? "datetime-local" : "time"}
                 id="start_time"
@@ -66,7 +69,14 @@ const ShiftDialog: React.FC<ShiftDialogProps> = ({
             </div>
 
             <div className="form-group">
-              <label htmlFor="end_time">終了時間</label>
+              <label htmlFor="end_time">
+                {selectedDates && selectedDates.length > 1 ? "終了時間（各日共通）" : "終了時間"}
+                {selectedDates && selectedDates.length > 1 && (
+                  <small style={{ display: "block", marginTop: "4px", color: "#666" }}>
+                    ※ 日をまたぐ場合は翌日の時間として登録されます
+                  </small>
+                )}
+              </label>
               <input
                 type={useDateTime ? "datetime-local" : "time"}
                 id="end_time"
