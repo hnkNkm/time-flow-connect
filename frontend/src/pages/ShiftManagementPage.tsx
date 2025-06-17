@@ -10,6 +10,20 @@ import format from "date-fns/format";
 import Box from "@mui/material/Box";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import IconButton from "@mui/material/IconButton";
+import DeleteIcon from "@mui/icons-material/Delete";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
 
 import { shiftAPI } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -56,6 +70,10 @@ const ShiftManagementPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"my" | "all">("my"); // 表示モードの状態を追加
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false); // 登録モーダルの開閉状態
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false); // 削除確認ダイアログの開閉状態
+  const [shiftToDelete, setShiftToDelete] = useState<number | null>(null); // 削除対象のシフトID
+  const [bulkApprovalOpen, setBulkApprovalOpen] = useState(false); // 一括承認ダイアログの開閉状態
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null); // 一括承認対象のユーザーID
 
   // シフト登録フォーム用のステート
   const [formData, setFormData] = useState({
@@ -390,6 +408,104 @@ const ShiftManagementPage: React.FC = () => {
     }
   };
 
+  // シフト削除の処理
+  const handleDelete = async (id: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await shiftAPI.deleteShift(id);
+      // シフトリストから削除
+      setMyShifts((prevShifts) => prevShifts.filter((shift) => shift.id !== id));
+      setShifts((prevShifts) => prevShifts.filter((shift) => shift.id !== id));
+      // カレンダーイベントからも削除
+      setCalendarEvents((prevEvents) =>
+        prevEvents.filter((event) => event.resource.id !== id)
+      );
+      // 削除確認ダイアログを閉じる
+      setDeleteConfirmOpen(false);
+      setShiftToDelete(null);
+      // 成功メッセージ（必要に応じて）
+      console.log("シフトが削除されました");
+    } catch (err) {
+      console.error("シフト削除エラー:", err);
+      setError("シフトの削除に失敗しました");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 削除確認ダイアログを開く
+  const handleDeleteClick = (id: number) => {
+    setShiftToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  // 削除確認ダイアログを閉じる
+  const handleDeleteCancel = () => {
+    setDeleteConfirmOpen(false);
+    setShiftToDelete(null);
+  };
+
+  // 削除確認ダイアログで削除を実行
+  const handleDeleteConfirm = () => {
+    if (shiftToDelete !== null) {
+      handleDelete(shiftToDelete);
+    }
+  };
+
+  // 一括承認の処理
+  const handleBulkApprove = async () => {
+    if (!isAdmin || !selectedUserId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      // 選択されたユーザーのpendingシフトを取得
+      const userPendingShifts = shifts.filter(
+        (shift) => shift.user_id === selectedUserId && shift.status === "pending"
+      );
+      
+      // 各シフトを承認
+      const approvalPromises = userPendingShifts.map((shift) =>
+        shiftAPI.approveShift(shift.id)
+      );
+      
+      await Promise.all(approvalPromises);
+      
+      // UIを更新
+      setShifts((prevShifts) =>
+        prevShifts.map((shift) =>
+          shift.user_id === selectedUserId && shift.status === "pending"
+            ? { ...shift, status: "confirmed" }
+            : shift
+        )
+      );
+      
+      // カレンダーイベントも更新
+      setCalendarEvents((prevEvents) =>
+        prevEvents.map((event) =>
+          event.resource.user_id === selectedUserId && event.resource.status === "pending"
+            ? {
+                ...event,
+                title: `${event.resource.user_full_name} (confirmed)`,
+                resource: { ...event.resource, status: "confirmed" },
+              }
+            : event
+        )
+      );
+      
+      // ダイアログを閉じる
+      setBulkApprovalOpen(false);
+      setSelectedUserId(null);
+      
+      console.log(`ユーザーID ${selectedUserId} のシフトを一括承認しました`);
+    } catch (err) {
+      console.error("一括承認エラー:", err);
+      setError("一括承認に失敗しました");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // カレンダーイベント選択時の処理
   const handleSelectEvent = (event: CalendarEvent) => {
     setSelectedShift(event.resource); // 選択されたシフトの元データをステートに保存
@@ -531,11 +647,6 @@ const ShiftManagementPage: React.FC = () => {
           
           // 日をまたぐシフトかどうかを判定
           let adjustedEndTime = endTime;
-          let isOvernightShift = false;
-          
-          if (endHour < startHour || (endHour === startHour && endMin < startMin)) {
-            isOvernightShift = true;
-          }
           
           return {
             date: dateString,
@@ -726,6 +837,7 @@ const ShiftManagementPage: React.FC = () => {
                 <th>終了時間</th>
                 <th>状態</th>
                 <th>メモ</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody>
@@ -751,6 +863,19 @@ const ShiftManagementPage: React.FC = () => {
                       : shift.status}
                   </td>
                   <td>{shift.memo || "-"}</td>
+                  <td>
+                    {shift.status === "pending" && (
+                      <IconButton
+                        color="error"
+                        size="small"
+                        onClick={() => handleDeleteClick(shift.id)}
+                        disabled={loading}
+                        title="削除"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -761,7 +886,17 @@ const ShiftManagementPage: React.FC = () => {
       {/* 全員のシフト一覧（管理者のみ、テーブル表示も残しておく） */}
       {isAdmin && (
         <div className="all-shifts">
-          <h3>全員のシフト</h3>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <h3>全員のシフト</h3>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setBulkApprovalOpen(true)}
+              disabled={loading || shifts.filter(s => s.status === "pending").length === 0}
+            >
+              一括承認
+            </Button>
+          </Box>
 
           {shifts.length === 0 ? (
             <div className="no-records">
@@ -805,14 +940,27 @@ const ShiftManagementPage: React.FC = () => {
                     </td>
                     <td>{shift.memo || "-"}</td>
                     <td>
-                      {shift.status !== "confirmed" && (
-                        <button
-                          className="approve-button"
-                          onClick={() => handleApprove(shift.id)}
-                          disabled={loading}
-                        >
-                          承認
-                        </button>
+                      {shift.status === "pending" && (
+                        <Box display="flex" gap={1}>
+                          <IconButton
+                            color="success"
+                            size="small"
+                            onClick={() => handleApprove(shift.id)}
+                            disabled={loading}
+                            title="承認"
+                          >
+                            <CheckIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            color="error"
+                            size="small"
+                            onClick={() => handleReject(shift.id)}
+                            disabled={loading}
+                            title="却下"
+                          >
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
                       )}
                     </td>
                   </tr>
@@ -856,10 +1004,16 @@ const ShiftManagementPage: React.FC = () => {
               ? "approve"
               : "view"
           }
+          shiftStatus={selectedShift.status}
+          isMyShift={selectedShift.user_id === user?.id}
           onClose={() => setIsModalOpen(false)}
           onSubmit={(_e) => {}} // ダミー関数、view/approve モードでは使用しない
           onApprove={handleApproveClick}
           onReject={handleRejectClick}
+          onDelete={() => {
+            setIsModalOpen(false);
+            handleDeleteClick(selectedShift.id);
+          }}
         />
       )}
 
@@ -887,6 +1041,84 @@ const ShiftManagementPage: React.FC = () => {
         useDateTime={!isMultiDaySelection}
         selectedDates={isMultiDaySelection ? selectedDates : undefined}
       />
+
+      {/* 削除確認ダイアログ */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={handleDeleteCancel}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">シフト削除の確認</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            このシフトを削除してもよろしいですか？この操作は取り消すことができません。
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} color="primary">
+            キャンセル
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+            削除
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 一括承認ダイアログ */}
+      <Dialog
+        open={bulkApprovalOpen}
+        onClose={() => setBulkApprovalOpen(false)}
+        aria-labelledby="bulk-approval-dialog-title"
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle id="bulk-approval-dialog-title">シフト一括承認</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            特定のユーザーの申請中のシフトをすべて承認します。
+          </DialogContentText>
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel id="user-select-label">ユーザーを選択</InputLabel>
+            <Select
+              labelId="user-select-label"
+              value={selectedUserId || ""}
+              onChange={(e) => setSelectedUserId(Number(e.target.value))}
+              label="ユーザーを選択"
+            >
+              {/* ユニークなユーザーリストを作成 */}
+              {Array.from(
+                new Map(
+                  shifts
+                    .filter((shift) => shift.status === "pending")
+                    .map((shift) => [shift.user_id, shift])
+                ).values()
+              ).map((shift) => (
+                <MenuItem key={shift.user_id} value={shift.user_id}>
+                  {shift.user_full_name} (
+                  {shifts.filter(
+                    (s) => s.user_id === shift.user_id && s.status === "pending"
+                  ).length}
+                  件の申請中シフト)
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBulkApprovalOpen(false)} color="primary">
+            キャンセル
+          </Button>
+          <Button
+            onClick={handleBulkApprove}
+            color="primary"
+            variant="contained"
+            disabled={!selectedUserId || loading}
+          >
+            一括承認
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

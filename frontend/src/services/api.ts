@@ -170,4 +170,12 @@ export const shiftAPI = {
   rejectShift: async (id: number) => {
     return api.put(`/api/shifts/${id}/reject`);
   },
+
+  deleteShift: async (id: number) => {
+    return api.delete(`/api/shifts/${id}`);
+  },
+
+  bulkApproveShifts: async (data: { shifts: number[]; status: string; admin_comment?: string }) => {
+    return api.put("/api/shifts/admin/confirm", data);
+  },
 };
