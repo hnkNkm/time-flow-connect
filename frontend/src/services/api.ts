@@ -134,6 +134,10 @@ export const shiftAPI = {
     return api.post("/api/shifts", data);
   },
 
+  bulkRegisterShifts: async (data: any) => {
+    return api.post("/api/shifts/bulk", data);
+  },
+
   updateShift: async (id: number, data: any) => {
     return api.put(`/api/shifts/${id}`, data);
   },
