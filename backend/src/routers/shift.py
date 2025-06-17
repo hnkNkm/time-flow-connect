@@ -147,6 +147,7 @@ async def get_my_shifts(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     status: Optional[str] = None,
+    sort_order: str = Query("desc", regex="^(asc|desc)$", description="ソート順 (asc: 古い順, desc: 新しい順)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -162,7 +163,10 @@ async def get_my_shifts(
         query = query.filter(Shift.status == status)
     
     # 日付順にソート
-    query = query.order_by(Shift.date)
+    if sort_order == "desc":
+        query = query.order_by(Shift.date.desc())
+    else:
+        query = query.order_by(Shift.date.asc())
     
     return query.all()
 
@@ -173,6 +177,7 @@ async def get_all_shifts(
     end_date: Optional[date] = None,
     user_id: Optional[int] = None,
     status: Optional[str] = None,
+    sort_order: str = Query("desc", regex="^(asc|desc)$", description="ソート順 (asc: 古い順, desc: 新しい順)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
@@ -198,8 +203,11 @@ async def get_all_shifts(
     if status:
         query = query.filter(Shift.status == status)
     
-    # 日付順、ユーザーID順にソート
-    query = query.order_by(Shift.date, User.id)
+    # 日付順にソート
+    if sort_order == "desc":
+        query = query.order_by(Shift.date.desc(), User.id)
+    else:
+        query = query.order_by(Shift.date.asc(), User.id)
     
     # 結果を整形
     result = []
@@ -402,6 +410,38 @@ async def reject_shift(
     db.commit()
     db.refresh(shift)
     return shift
+
+# シフトの削除（自分のシフトのみ削除可能）
+@router.delete("/{shift_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_shift(
+    shift_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    shift = db.query(Shift).filter(Shift.id == shift_id).first()
+    if not shift:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Shift with id {shift_id} not found"
+        )
+    
+    # 自分のシフトか、管理者の場合のみ削除可能
+    if shift.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="このシフトを削除する権限がありません"
+        )
+    
+    # pendingステータスのシフトのみ削除可能
+    if shift.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="確定済みまたは却下済みのシフトは削除できません"
+        )
+    
+    db.delete(shift)
+    db.commit()
+    return
 
 # 管理者用：シフトの削除（任意：必要であれば追加）
 # @router.delete("/{shift_id}", status_code=status.HTTP_204_NO_CONTENT)

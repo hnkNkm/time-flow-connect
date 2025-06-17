@@ -142,7 +142,7 @@ export const shiftAPI = {
     return api.put(`/api/shifts/${id}`, data);
   },
 
-  getMyShifts: async (params?: { start_date?: string; end_date?: string }) => {
+  getMyShifts: async (params?: { start_date?: string; end_date?: string; status?: string; sort_order?: string }) => {
     return api.get("/api/shifts/my-shifts", { params });
   },
 
@@ -150,7 +150,8 @@ export const shiftAPI = {
     start_date?: string;
     end_date?: string;
     user_id?: number;
-    approved_only?: boolean;
+    status?: string;
+    sort_order?: string;
   }) => {
     return api.get("/api/shifts/admin/all-shifts", { params });
   },
@@ -169,5 +170,13 @@ export const shiftAPI = {
 
   rejectShift: async (id: number) => {
     return api.put(`/api/shifts/${id}/reject`);
+  },
+
+  deleteShift: async (id: number) => {
+    return api.delete(`/api/shifts/${id}`);
+  },
+
+  bulkApproveShifts: async (data: { shifts: number[]; status: string; admin_comment?: string }) => {
+    return api.put("/api/shifts/admin/confirm", data);
   },
 };
