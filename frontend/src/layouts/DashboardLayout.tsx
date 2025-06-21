@@ -5,6 +5,9 @@ import { menuItems } from "../config/menuConfig";
 import { MenuItem } from "../types/navigation";
 import QuickAttendance from "../components/QuickAttendance";
 import NotificationBadge from "../components/NotificationBadge";
+import PasswordChangeDialog from "../components/PasswordChangeDialog";
+import { Menu, MenuItem, Divider, ListItemIcon, ListItemText } from "@mui/material";
+import { AccountCircle, Lock as LockIcon, Logout as LogoutIcon } from "@mui/icons-material";
 import "../styles/DashboardLayout.css";
 
 const DashboardLayout: React.FC = () => {
@@ -16,6 +19,8 @@ const DashboardLayout: React.FC = () => {
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['attendance', 'payroll']);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 
   // 画面サイズの変更を検知
   useEffect(() => {
@@ -55,6 +60,20 @@ const DashboardLayout: React.FC = () => {
   const handleLogout = () => {
     logout();
     navigate("/login");
+  };
+
+  // ユーザーメニューの開閉
+  const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setUserMenuAnchor(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchor(null);
+  };
+
+  const handlePasswordChange = () => {
+    setPasswordDialogOpen(true);
+    handleUserMenuClose();
   };
 
   // メニューの開閉
@@ -224,15 +243,19 @@ const DashboardLayout: React.FC = () => {
         <div className="header-right">
           <div className="quick-actions">
             <QuickAttendance variant="icon" />
-            {isAdmin && <NotificationBadge />}
+            <NotificationBadge />
           </div>
           <div className="user-info">
-            <span className="user-name hidden-sm">
-              {user?.full_name || "ユーザー"}
-            </span>
-            <button className="logout-button" onClick={handleLogout}>
-              <span className="material-icons">logout</span>
-              <span className="hidden-sm">ログアウト</span>
+            <button 
+              className="user-menu-button"
+              onClick={handleUserMenuOpen}
+              aria-controls="user-menu"
+              aria-haspopup="true"
+            >
+              <AccountCircle />
+              <span className="user-name hidden-sm">
+                {user?.full_name || "ユーザー"}
+              </span>
             </button>
           </div>
         </div>
@@ -272,6 +295,42 @@ const DashboardLayout: React.FC = () => {
       {menuOpen && isMobile && (
         <div className="overlay" onClick={handleOverlayClick}></div>
       )}
+
+      {/* ユーザーメニュー */}
+      <Menu
+        id="user-menu"
+        anchorEl={userMenuAnchor}
+        open={Boolean(userMenuAnchor)}
+        onClose={handleUserMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={handlePasswordChange}>
+          <ListItemIcon>
+            <LockIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>パスワード変更</ListItemText>
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={handleLogout}>
+          <ListItemIcon>
+            <LogoutIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>ログアウト</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      {/* パスワード変更ダイアログ */}
+      <PasswordChangeDialog
+        open={passwordDialogOpen}
+        onClose={() => setPasswordDialogOpen(false)}
+      />
     </div>
   );
 };

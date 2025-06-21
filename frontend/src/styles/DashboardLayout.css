@@ -112,6 +112,36 @@
   }
 }
 
+.user-menu-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.user-menu-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.user-menu-button svg {
+  font-size: 1.5rem;
+}
+
+@media (max-width: 480px) {
+  .user-menu-button {
+    padding: 0.5rem;
+  }
+}
+
 .user-name {
   margin-right: 1rem;
   font-weight: 500;
