@@ -1,0 +1,43 @@
+/* 給与明細ページのスタイル */
+.payslip-detail {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* 印刷時のスタイル */
+@media print {
+  /* ヘッダーとナビゲーションを非表示 */
+  .header,
+  .sidebar,
+  .MuiButton-root {
+    display: none !important;
+  }
+
+  /* 印刷領域を最大化 */
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 給与明細を中央に配置 */
+  .payslip-detail-page {
+    margin: 0;
+    padding: 20px;
+  }
+
+  /* 余白調整 */
+  .payslip-detail {
+    box-shadow: none !important;
+    border: 1px solid #ddd;
+  }
+
+  /* ページ区切り */
+  .payslip-detail {
+    page-break-inside: avoid;
+  }
+}
+
+/* 給与計算管理ページ */
+.payslip-management-page {
+  /* 必要に応じてスタイルを追加 */
+}

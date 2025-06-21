@@ -126,6 +126,7 @@ class User(Base):
     leaves = relationship("Leave", foreign_keys=[Leave.user_id], back_populates="user")
     leave_allocations = relationship("LeaveAllocation", back_populates="user")
     reports = relationship("Report", back_populates="user")
+    payslips = relationship("Payslip", foreign_keys="Payslip.user_id", back_populates="user")
 
 
 class Attendance(Base):
@@ -184,6 +185,76 @@ class PayrollSetting(Base):
     regular_hours_per_day = Column(Float, default=8.0)  # 1日の所定労働時間
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+
+# 給与明細モデル
+class Payslip(Base):
+    __tablename__ = "payslips"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    
+    # 勤怠情報
+    work_days = Column(Integer, default=0)  # 出勤日数
+    total_hours = Column(Float, default=0)  # 総労働時間
+    regular_hours = Column(Float, default=0)  # 通常勤務時間
+    overtime_hours = Column(Float, default=0)  # 残業時間
+    late_night_hours = Column(Float, default=0)  # 深夜勤務時間
+    holiday_hours = Column(Float, default=0)  # 休日勤務時間
+    
+    # 支給項目
+    base_salary = Column(Integer, default=0)  # 基本給
+    overtime_pay = Column(Integer, default=0)  # 残業手当
+    late_night_pay = Column(Integer, default=0)  # 深夜手当
+    holiday_pay = Column(Integer, default=0)  # 休日手当
+    other_allowances = Column(Integer, default=0)  # その他手当
+    gross_salary = Column(Integer, default=0)  # 総支給額
+    
+    # 控除項目
+    health_insurance = Column(Integer, default=0)  # 健康保険料
+    pension = Column(Integer, default=0)  # 厚生年金
+    employment_insurance = Column(Integer, default=0)  # 雇用保険
+    income_tax = Column(Integer, default=0)  # 所得税
+    resident_tax = Column(Integer, default=0)  # 住民税
+    other_deductions = Column(Integer, default=0)  # その他控除
+    total_deductions = Column(Integer, default=0)  # 控除合計
+    
+    # 差引支給額
+    net_salary = Column(Integer, default=0)  # 手取り額
+    
+    # ステータス
+    status = Column(String(20), default="draft")  # draft, confirmed, paid
+    confirmed_at = Column(DateTime, nullable=True)
+    confirmed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    paid_at = Column(DateTime, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    # リレーションシップ
+    user = relationship("User", foreign_keys=[user_id], back_populates="payslips")
+    confirmed_by_user = relationship("User", foreign_keys=[confirmed_by])
+    details = relationship("PayslipDetail", back_populates="payslip", cascade="all, delete-orphan")
+
+
+# 給与明細詳細モデル（拡張用）
+class PayslipDetail(Base):
+    __tablename__ = "payslip_details"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    payslip_id = Column(Integer, ForeignKey("payslips.id"), nullable=False)
+    
+    category = Column(String(50), nullable=False)  # allowance, deduction
+    item_name = Column(String(100), nullable=False)  # 項目名
+    amount = Column(Integer, nullable=False)  # 金額
+    description = Column(String(255), nullable=True)  # 説明
+    
+    created_at = Column(DateTime, default=datetime.now)
+    
+    # リレーションシップ
+    payslip = relationship("Payslip", back_populates="details")
 
 
 class Holiday(Base):

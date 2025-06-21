@@ -15,10 +15,14 @@ import TeamMonthlyAttendancePage from "./pages/TeamMonthlyAttendancePage";
 import ShiftManagementPage from "./pages/ShiftManagementPage";
 import EmployeeListPage from "./pages/EmployeeListPage";
 import EmployeeDetailPage from "./pages/EmployeeDetailPage";
+import PayslipPage from "./pages/PayslipPage";
+import PayslipDetailPage from "./pages/PayslipDetailPage";
+import PayslipManagementPage from "./pages/PayslipManagementPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./App.css";
 import "./styles/estimatedSalary.css";
+import "./styles/payslip.css";
 
 // プライベートルート（認証が必要なルート）
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {
@@ -83,6 +87,8 @@ function App() {
               element={<MonthlyAttendancePage />}
             />
             <Route path="/shift" element={<ShiftManagementPage />} />
+            <Route path="/payslips" element={<PayslipPage />} />
+            <Route path="/payslips/:year/:month" element={<PayslipDetailPage />} />
 
             {/* 管理者専用ページ */}
             <Route
@@ -107,6 +113,14 @@ function App() {
                 <PrivateRoute>
                   <EmployeeDetailPage />
                 </PrivateRoute>
+              }
+            />
+            <Route
+              path="/payslips/management"
+              element={
+                <AdminRoute>
+                  <PayslipManagementPage />
+                </AdminRoute>
               }
             />
           </Route>

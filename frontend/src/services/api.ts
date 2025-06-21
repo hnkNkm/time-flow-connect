@@ -225,3 +225,46 @@ export const employeeAPI = {
     return api.post("/api/employees/password/reset", data);
   },
 };
+
+// 給与明細関連のAPI
+export const payslipAPI = {
+  getMyPayslips: async (params?: { year?: number; status?: string }) => {
+    return api.get("/api/payslips/my-payslips", { params });
+  },
+
+  getMyPayslip: async (year: number, month: number) => {
+    return api.get(`/api/payslips/my-payslips/${year}/${month}`);
+  },
+
+  getAllPayslips: async (params?: { 
+    year?: number; 
+    month?: number; 
+    user_id?: number; 
+    status?: string 
+  }) => {
+    return api.get("/api/payslips/admin", { params });
+  },
+
+  calculatePayslips: async (data: { 
+    year: number; 
+    month: number; 
+    user_ids?: number[] 
+  }) => {
+    return api.post("/api/payslips/admin/calculate", data);
+  },
+
+  updatePayslip: async (id: number, data: any) => {
+    return api.put(`/api/payslips/${id}`, data);
+  },
+
+  confirmPayslips: async (payslip_ids: number[]) => {
+    return api.post("/api/payslips/admin/confirm", { payslip_ids });
+  },
+
+  recordPayment: async (data: { 
+    payslip_ids: number[]; 
+    payment_date: string 
+  }) => {
+    return api.post("/api/payslips/admin/payment", data);
+  },
+};
