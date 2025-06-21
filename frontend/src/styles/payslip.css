@@ -6,34 +6,99 @@
 
 /* 印刷時のスタイル */
 @media print {
+  /* 印刷時に非表示にする要素 */
+  .no-print {
+    display: none !important;
+  }
+  
+  /* 印刷時のみ表示する要素 */
+  .print-only {
+    display: block !important;
+  }
+  
   /* ヘッダーとナビゲーションを非表示 */
   .header,
   .sidebar,
-  .MuiButton-root {
+  .MuiButton-root,
+  .MuiDrawer-root,
+  .MuiAppBar-root {
     display: none !important;
   }
 
   /* 印刷領域を最大化 */
-  .main-content {
+  body {
     margin: 0 !important;
     padding: 0 !important;
   }
-
-  /* 給与明細を中央に配置 */
-  .payslip-detail-page {
-    margin: 0;
-    padding: 20px;
+  
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
   }
 
-  /* 余白調整 */
+  /* 給与明細を1ページに収める */
+  .payslip-detail-page {
+    margin: 0;
+    padding: 10mm;
+    width: 100%;
+    min-height: auto !important;
+  }
+
+  /* 給与明細のスタイル調整 */
   .payslip-detail {
     box-shadow: none !important;
     border: 1px solid #ddd;
+    margin: 0 !important;
+    padding: 15px !important;
+  }
+  
+  /* タイトルサイズ調整 */
+  .payslip-detail h2,
+  .payslip-detail h6 {
+    margin: 10px 0 !important;
+    font-size: 16px !important;
+  }
+  
+  /* テーブルの密度を上げる */
+  .payslip-detail .MuiTable-root {
+    margin-bottom: 10px !important;
+  }
+  
+  .payslip-detail .MuiTableCell-root {
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+  }
+  
+  /* 区切り線の余白調整 */
+  .payslip-detail .MuiDivider-root {
+    margin: 10px 0 !important;
+  }
+  
+  /* 差引支給額セクションの調整 */
+  .payslip-detail .MuiBox-root {
+    padding: 8px !important;
+  }
+  
+  /* ステータス情報の文字サイズ */
+  .payslip-detail .MuiChip-root {
+    height: 24px !important;
+  }
+  
+  .payslip-detail .MuiTypography-caption {
+    font-size: 10px !important;
   }
 
-  /* ページ区切り */
+  /* ページ区切り防止 */
   .payslip-detail {
     page-break-inside: avoid;
+  }
+  
+  /* A4サイズに最適化 */
+  @page {
+    size: A4;
+    margin: 0;
   }
 }
 

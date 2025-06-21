@@ -124,7 +124,7 @@ const PayslipDetailPage: React.FC = () => {
 
   return (
     <div className="payslip-detail-page">
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} className="no-print">
         <h2>
           {payslip.year}年{payslip.month}月 給与明細
         </h2>
@@ -147,8 +147,14 @@ const PayslipDetailPage: React.FC = () => {
       </Box>
 
       <Paper sx={{ p: 3, mb: 3 }} className="payslip-detail">
+        {/* 印刷時のタイトル */}
+        <Box className="print-only" sx={{ display: 'none' }}>
+          <Typography variant="h5" align="center" gutterBottom>
+            {payslip.year}年{payslip.month}月 給与明細書
+          </Typography>
+        </Box>
         {/* ヘッダー情報 */}
-        <Grid container spacing={2} mb={3}>
+        <Grid container spacing={2} mb={2}>
           <Grid item xs={12} sm={6}>
             <Typography variant="subtitle2" color="textSecondary">
               氏名
