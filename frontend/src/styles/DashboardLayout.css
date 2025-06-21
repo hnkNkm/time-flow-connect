@@ -137,6 +137,10 @@
   .mobile-sidebar-header {
     display: none;
   }
+  
+  .menu-toggle {
+    display: none !important;
+  }
 }
 
 /* モバイルサイズの表示 */
@@ -150,12 +154,13 @@
     z-index: 1000;
     padding-top: 0;
     overflow-y: auto;
-    transition: left 0.3s ease;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    touch-action: pan-y;
   }
 
   .sidebar.open {
     left: 0;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.15);
   }
 
   .main-content {
@@ -171,6 +176,16 @@
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 999;
+    animation: fadeIn 0.3s ease;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .mobile-sidebar-header {
@@ -196,6 +211,11 @@
     padding: 0.5rem;
     border-radius: 50%;
     transition: background-color 0.3s ease;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .close-menu:hover {
@@ -256,6 +276,9 @@
   font-size: 0.95rem;
   font-weight: 500;
   border-radius: 12px;
+  min-height: 48px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .menu-item.level-1 a,
@@ -276,6 +299,12 @@
 .menu-item.level-1 a:hover {
   background-color: rgba(25, 118, 210, 0.08);
   padding-left: 3.75rem;
+}
+
+@media (max-width: 768px) {
+  .menu-item.level-1 a:hover {
+    padding-left: 3.5rem;
+  }
 }
 
 .menu-item.active > a,

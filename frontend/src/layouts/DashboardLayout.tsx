@@ -14,6 +14,8 @@ const DashboardLayout: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['attendance', 'payroll']);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   // 画面サイズの変更を検知
   useEffect(() => {
@@ -67,6 +69,76 @@ const DashboardLayout: React.FC = () => {
     }
   };
 
+  // メニュー外クリックで閉じる
+  const handleOverlayClick = () => {
+    setMenuOpen(false);
+  };
+
+  // スワイプジェスチャーの処理
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && menuOpen) {
+      setMenuOpen(false);
+    }
+    if (isRightSwipe && !menuOpen) {
+      setMenuOpen(true);
+    }
+  };
+
+  // エッジからのスワイプジェスチャー
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (touch.clientX < 20 && !menuOpen) {
+        setTouchStart(touch.clientX);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (touchStart !== null) {
+        const touch = e.touches[0];
+        setTouchEnd(touch.clientX);
+        
+        if (touch.clientX > 50 && !menuOpen) {
+          setMenuOpen(true);
+        }
+      }
+    };
+
+    const handleTouchEnd = () => {
+      setTouchStart(null);
+      setTouchEnd(null);
+    };
+
+    document.addEventListener('touchstart', handleTouchStart);
+    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isMobile, menuOpen, touchStart]);
+
   // メニューの展開/折りたたみ
   const toggleMenuExpand = (menuId: string) => {
     setExpandedMenus(prev => 
@@ -100,7 +172,10 @@ const DashboardLayout: React.FC = () => {
           <>
             <button
               className="menu-toggle-item"
-              onClick={() => toggleMenuExpand(item.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleMenuExpand(item.id);
+              }}
               aria-expanded={isExpanded}
               aria-controls={`submenu-${item.id}`}
             >
@@ -140,8 +215,9 @@ const DashboardLayout: React.FC = () => {
             className="menu-toggle"
             onClick={toggleMenu}
             aria-label="メニュー"
+            aria-expanded={menuOpen}
           >
-            <span className="material-icons">menu</span>
+            <span className="material-icons">{menuOpen ? 'close' : 'menu'}</span>
           </button>
           <h1 className="app-title">勤怠管理システム</h1>
         </div>
@@ -163,7 +239,12 @@ const DashboardLayout: React.FC = () => {
       </header>
 
       <div className="dashboard-container">
-        <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
+        <aside 
+          className={`sidebar ${menuOpen ? "open" : ""}`}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           {isMobile && (
             <div className="mobile-sidebar-header">
               <button className="close-menu" onClick={toggleMenu}>
@@ -189,7 +270,7 @@ const DashboardLayout: React.FC = () => {
       </div>
 
       {menuOpen && isMobile && (
-        <div className="overlay" onClick={toggleMenu}></div>
+        <div className="overlay" onClick={handleOverlayClick}></div>
       )}
     </div>
   );
