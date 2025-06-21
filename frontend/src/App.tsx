@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import AuthLayout from "./layouts/AuthLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 import LoginPage from "./pages/LoginPage";
+import Dashboard from "./pages/Dashboard";
 import AttendanceFormPage from "./pages/AttendanceFormPage";
 import AttendanceListPage from "./pages/AttendanceListPage";
 import MonthlyAttendancePage from "./pages/MonthlyAttendancePage";
@@ -18,6 +19,7 @@ import EmployeeDetailPage from "./pages/EmployeeDetailPage";
 import PayslipPage from "./pages/PayslipPage";
 import PayslipDetailPage from "./pages/PayslipDetailPage";
 import PayslipManagementPage from "./pages/PayslipManagementPage";
+import LeaveRequestPage from "./pages/LeaveRequestPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./App.css";
@@ -78,8 +80,9 @@ function App() {
           >
             <Route
               path="/"
-              element={<Navigate to="/attendance/form" replace />}
+              element={<Navigate to="/dashboard" replace />}
             />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/attendance/form" element={<AttendanceFormPage />} />
             <Route path="/attendance/list" element={<AttendanceListPage />} />
             <Route
@@ -87,6 +90,7 @@ function App() {
               element={<MonthlyAttendancePage />}
             />
             <Route path="/shift" element={<ShiftManagementPage />} />
+            <Route path="/leave" element={<LeaveRequestPage />} />
             <Route path="/payslips" element={<PayslipPage />} />
             <Route path="/payslips/:year/:month" element={<PayslipDetailPage />} />
 
