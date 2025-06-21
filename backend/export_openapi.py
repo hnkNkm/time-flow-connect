@@ -3,7 +3,7 @@
 FastAPIアプリケーションからOpenAPIスキーマをエクスポートするスクリプト
 """
 import json
-import yaml
+# import yaml
 import sys
 from pathlib import Path
 
@@ -26,11 +26,11 @@ def export_openapi():
         json.dump(openapi_schema, f, indent=2, ensure_ascii=False)
     print(f"OpenAPI schema exported to: {json_path}")
     
-    # YAML形式で保存
-    yaml_path = root_dir / "openapi.yaml"
-    with open(yaml_path, "w", encoding="utf-8") as f:
-        yaml.dump(openapi_schema, f, allow_unicode=True, sort_keys=False)
-    print(f"OpenAPI schema exported to: {yaml_path}")
+    # YAML形式で保存（yamlモジュールが必要）
+    # yaml_path = root_dir / "openapi.yaml"
+    # with open(yaml_path, "w", encoding="utf-8") as f:
+    #     yaml.dump(openapi_schema, f, allow_unicode=True, sort_keys=False)
+    # print(f"OpenAPI schema exported to: {yaml_path}")
     
     # エンドポイント数を表示
     endpoints = len(openapi_schema.get("paths", {}))

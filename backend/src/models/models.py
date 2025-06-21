@@ -183,6 +183,9 @@ class PayrollSetting(Base):
     night_shift_start_time = Column(Time, default=time(22, 0))  # 夜勤開始時間（例：22:00）
     night_shift_end_time = Column(Time, default=time(5, 0))  # 夜勤終了時間（例：5:00）
     regular_hours_per_day = Column(Float, default=8.0)  # 1日の所定労働時間
+    use_db_rates = Column(Boolean, default=False)  # DB料率を使用するか
+    default_prefecture = Column(String(50), nullable=True)  # デフォルト都道府県
+    default_industry = Column(String(50), nullable=True)  # デフォルト業種
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
@@ -349,6 +352,44 @@ class Report(Base):
     
     # リレーションシップ
     user = relationship("User", back_populates="reports")
+
+# 保険料率マスタモデル
+class InsuranceRate(Base):
+    __tablename__ = "insurance_rates"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    rate_type = Column(String(50), nullable=False)  # health, pension, employment
+    rate_name = Column(String(100), nullable=False)  # 表示名（例：健康保険料）
+    prefecture = Column(String(50), nullable=True)  # 都道府県（健康保険用）
+    industry_type = Column(String(50), nullable=True)  # 業種（雇用保険用）
+    rate = Column(Float, nullable=False)  # 料率（例: 0.05 = 5%）
+    employee_rate = Column(Float, nullable=True)  # 従業員負担率
+    employer_rate = Column(Float, nullable=True)  # 会社負担率
+    effective_date = Column(Date, nullable=False)  # 適用開始日
+    expiry_date = Column(Date, nullable=True)  # 適用終了日
+    notes = Column(Text, nullable=True)  # 備考
+    
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+
+# 所得税率テーブル
+class IncomeTaxRate(Base):
+    __tablename__ = "income_tax_rates"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    min_amount = Column(Integer, nullable=False)  # 下限金額
+    max_amount = Column(Integer, nullable=True)  # 上限金額（NULL=上限なし）
+    rate = Column(Float, nullable=False)  # 税率
+    deduction = Column(Integer, default=0)  # 控除額
+    withholding_type = Column(String(20), default="monthly")  # monthly, daily
+    dependent_count = Column(Integer, default=0)  # 扶養人数
+    effective_date = Column(Date, nullable=False)  # 適用開始日
+    expiry_date = Column(Date, nullable=True)  # 適用終了日
+    
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
 
 # リレーションシップを後で設定
 Leave.user = relationship("User", foreign_keys=[Leave.user_id], back_populates="leaves")
