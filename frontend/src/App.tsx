@@ -25,6 +25,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./App.css";
 import "./styles/estimatedSalary.css";
 import "./styles/payslip.css";
+import "./styles/responsive.css";
 
 // プライベートルート（認証が必要なルート）
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {

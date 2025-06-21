@@ -217,7 +217,7 @@ const DashboardLayout: React.FC = () => {
             aria-label="メニュー"
             aria-expanded={menuOpen}
           >
-            <span className="material-icons">{menuOpen ? 'close' : 'menu'}</span>
+            <span className="material-icons">menu</span>
           </button>
           <h1 className="app-title">勤怠管理システム</h1>
         </div>

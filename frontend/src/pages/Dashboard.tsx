@@ -97,8 +97,8 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+      <Typography variant="h4" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' } }}>
         ダッシュボード
       </Typography>
       <Typography variant="subtitle1" color="textSecondary" gutterBottom>
@@ -113,7 +113,7 @@ const Dashboard: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* 本日の勤務状況 */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} sm={6} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -161,7 +161,7 @@ const Dashboard: React.FC = () => {
         </Grid>
 
         {/* 今月の勤務サマリー */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} sm={6} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -170,15 +170,15 @@ const Dashboard: React.FC = () => {
               </Typography>
               {monthlyStats ? (
                 <Grid container spacing={2} sx={{ mt: 1 }}>
-                  <Grid item xs={6}>
+                  <Grid item xs={6} sm={6}>
                     <Typography variant="body2" color="textSecondary">
                       出勤日数
                     </Typography>
-                    <Typography variant="h6">
+                    <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                       {monthlyStats.work_days || 0} 日
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid item xs={6} sm={6}>
                     <Typography variant="body2" color="textSecondary">
                       総労働時間
                     </Typography>
