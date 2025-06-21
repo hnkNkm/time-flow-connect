@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api/employees", tags=["employees"])
 async def get_employees(
     page: int = Query(1, ge=1, description="ページ番号"),
     per_page: int = Query(20, ge=1, le=100, description="1ページあたりの件数"),
-    search: Optional[str] = Query(None, description="検索キーワード（名前、メール、社員番号）"),
+    search: Optional[str] = Query(None, description="検索キーワード（名前、メール、社員コード）"),
     department_id: Optional[int] = Query(None, description="部署ID"),
     employment_type: Optional[str] = Query(None, description="雇用形態"),
     is_active: Optional[bool] = Query(None, description="アクティブステータス"),
@@ -41,7 +41,7 @@ async def get_employees(
             or_(
                 User.full_name.ilike(f"%{search}%"),
                 User.email.ilike(f"%{search}%"),
-                User.employee_id.ilike(f"%{search}%")
+                User.employee_code.ilike(f"%{search}%")
             )
         )
     
@@ -132,12 +132,12 @@ async def create_employee(
             )
     
     # 社員番号の重複チェック
-    if employee_data.employee_id:
-        existing_employee = db.query(User).filter(User.employee_id == employee_data.employee_id).first()
+    if employee_data.employee_code:
+        existing_employee = db.query(User).filter(User.employee_code == employee_data.employee_code).first()
         if existing_employee:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="この社員番号は既に使用されています"
+                detail="この社員コードは既に使用されています"
             )
     
     # 新規ユーザー作成
@@ -200,12 +200,12 @@ async def update_employee(
             )
     
     # 社員番号の重複チェック
-    if "employee_id" in update_data and update_data["employee_id"] != employee.employee_id:
-        existing_employee = db.query(User).filter(User.employee_id == update_data["employee_id"]).first()
+    if "employee_id" in update_data and update_data["employee_id"] != employee.employee_code:
+        existing_employee = db.query(User).filter(User.employee_code == update_data["employee_id"]).first()
         if existing_employee:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="この社員番号は既に使用されています"
+                detail="この社員コードは既に使用されています"
             )
     
     # 更新

@@ -40,7 +40,7 @@ interface Employee {
   full_name: string;
   role: string;
   is_active: boolean;
-  employee_id?: string;
+  employee_code?: string;
   department?: {
     id: number;
     name: string;
@@ -153,7 +153,7 @@ const EmployeeListPage: React.FC = () => {
             <TextField
               fullWidth
               size="small"
-              label="検索（名前・メール・社員番号）"
+              label="検索（名前・メール・社員コード）"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               InputProps={{
@@ -229,7 +229,8 @@ const EmployeeListPage: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>社員番号</TableCell>
+                  <TableCell>ID</TableCell>
+                  <TableCell>社員コード</TableCell>
                   <TableCell>氏名</TableCell>
                   <TableCell>メールアドレス</TableCell>
                   <TableCell>部署</TableCell>
@@ -244,7 +245,8 @@ const EmployeeListPage: React.FC = () => {
               <TableBody>
                 {employees.map((employee) => (
                   <TableRow key={employee.id}>
-                    <TableCell>{employee.employee_id || "-"}</TableCell>
+                    <TableCell>{employee.id}</TableCell>
+                    <TableCell>{employee.employee_code || "-"}</TableCell>
                     <TableCell>{employee.full_name}</TableCell>
                     <TableCell>{employee.email}</TableCell>
                     <TableCell>{employee.department?.name || "-"}</TableCell>

@@ -97,7 +97,7 @@ class User(Base):
     force_password_change = Column(Boolean, default=True, server_default=expression.false(), nullable=False)
     
     # 社員情報
-    employee_id = Column(String(50), unique=True, nullable=True)  # 社員番号
+    employee_code = Column(String(50), unique=True, nullable=True)  # 社員番号（会社独自の番号）
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
     position = Column(String(100), nullable=True)  # 役職
     employment_type = Column(String(50), default="full_time")  # full_time, part_time, contract, intern

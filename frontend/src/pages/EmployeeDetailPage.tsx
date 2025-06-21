@@ -23,6 +23,8 @@ import {
   DialogContent,
   DialogActions,
   InputAdornment,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import {
   Save as SaveIcon,
@@ -75,7 +77,7 @@ const EmployeeDetailPage: React.FC = () => {
     role: "employee",
     is_active: true,
     password: "",
-    employee_id: "",
+    employee_code: "",
     department_id: "",
     position: "",
     employment_type: "full_time",
@@ -110,7 +112,7 @@ const EmployeeDetailPage: React.FC = () => {
         role: employee.role,
         is_active: employee.is_active,
         password: "",
-        employee_id: employee.employee_id || "",
+        employee_code: employee.employee_code || "",
         department_id: employee.department_id || "",
         position: employee.position || "",
         employment_type: employee.employment_type,
@@ -269,9 +271,9 @@ const EmployeeDetailPage: React.FC = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="社員番号"
-                  value={formData.employee_id}
-                  onChange={(e) => handleChange("employee_id", e.target.value)}
+                  label="社員コード"
+                  value={formData.employee_code}
+                  onChange={(e) => handleChange("employee_code", e.target.value)}
                   disabled={!isAdmin}
                 />
               </Grid>

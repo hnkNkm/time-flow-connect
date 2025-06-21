@@ -34,7 +34,7 @@ class EmployeeBase(BaseModel):
     is_active: bool = True
     
     # 社員情報
-    employee_id: Optional[str] = None
+    employee_code: Optional[str] = None
     department_id: Optional[int] = None
     position: Optional[str] = None
     employment_type: Optional[EmploymentType] = EmploymentType.FULL_TIME
@@ -61,7 +61,7 @@ class EmployeeUpdate(BaseModel):
     is_active: Optional[bool] = None
     
     # 社員情報
-    employee_id: Optional[str] = None
+    employee_code: Optional[str] = None
     department_id: Optional[int] = None
     position: Optional[str] = None
     employment_type: Optional[EmploymentType] = None
