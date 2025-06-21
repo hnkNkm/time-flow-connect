@@ -185,3 +185,86 @@ export const shiftAPI = {
     return api.get(`/api/shifts/estimated-salary/${year}/${month}`, { params });
   },
 };
+
+// 社員管理関連のAPI
+export const employeeAPI = {
+  getEmployees: async (params?: {
+    page?: number;
+    per_page?: number;
+    search?: string;
+    department_id?: number;
+    employment_type?: string;
+    is_active?: boolean;
+    sort_by?: string;
+    sort_order?: string;
+  }) => {
+    return api.get("/api/employees", { params });
+  },
+
+  getEmployee: async (id: number) => {
+    return api.get(`/api/employees/${id}`);
+  },
+
+  createEmployee: async (data: any) => {
+    return api.post("/api/employees", data);
+  },
+
+  updateEmployee: async (id: number, data: any) => {
+    return api.put(`/api/employees/${id}`, data);
+  },
+
+  toggleEmployeeActive: async (id: number) => {
+    return api.put(`/api/employees/${id}/toggle-active`);
+  },
+
+  changePassword: async (data: { current_password: string; new_password: string }) => {
+    return api.post("/api/employees/password/change", data);
+  },
+
+  resetPassword: async (data: { user_id: number; new_password: string }) => {
+    return api.post("/api/employees/password/reset", data);
+  },
+};
+
+// 給与明細関連のAPI
+export const payslipAPI = {
+  getMyPayslips: async (params?: { year?: number; status?: string }) => {
+    return api.get("/api/payslips/my-payslips", { params });
+  },
+
+  getMyPayslip: async (year: number, month: number) => {
+    return api.get(`/api/payslips/my-payslips/${year}/${month}`);
+  },
+
+  getAllPayslips: async (params?: { 
+    year?: number; 
+    month?: number; 
+    user_id?: number; 
+    status?: string 
+  }) => {
+    return api.get("/api/payslips/admin", { params });
+  },
+
+  calculatePayslips: async (data: { 
+    year: number; 
+    month: number; 
+    user_ids?: number[] 
+  }) => {
+    return api.post("/api/payslips/admin/calculate", data);
+  },
+
+  updatePayslip: async (id: number, data: any) => {
+    return api.put(`/api/payslips/${id}`, data);
+  },
+
+  confirmPayslips: async (payslip_ids: number[]) => {
+    return api.post("/api/payslips/admin/confirm", { payslip_ids });
+  },
+
+  recordPayment: async (data: { 
+    payslip_ids: number[]; 
+    payment_date: string 
+  }) => {
+    return api.post("/api/payslips/admin/payment", data);
+  },
+};

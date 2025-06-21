@@ -122,18 +122,53 @@ const DashboardLayout: React.FC = () => {
                   シフト管理
                 </Link>
               </li>
+              <li
+                className={
+                  location.pathname.startsWith("/payslips") &&
+                  !location.pathname.includes("/management")
+                    ? "active"
+                    : ""
+                }
+              >
+                <Link to="/payslips" onClick={handleMenuClick}>
+                  <span className="material-icons">receipt_long</span>
+                  給与明細
+                </Link>
+              </li>
 
               {isAdmin && (
-                <li
-                  className={
-                    location.pathname === "/team/monthly" ? "active" : ""
-                  }
-                >
-                  <Link to="/team/monthly" onClick={handleMenuClick}>
-                    <span className="material-icons">group</span>
-                    チーム月間勤怠
-                  </Link>
-                </li>
+                <>
+                  <li
+                    className={
+                      location.pathname === "/team/monthly" ? "active" : ""
+                    }
+                  >
+                    <Link to="/team/monthly" onClick={handleMenuClick}>
+                      <span className="material-icons">group</span>
+                      チーム月間勤怠
+                    </Link>
+                  </li>
+                  <li
+                    className={
+                      location.pathname.startsWith("/employees") ? "active" : ""
+                    }
+                  >
+                    <Link to="/employees" onClick={handleMenuClick}>
+                      <span className="material-icons">manage_accounts</span>
+                      社員管理
+                    </Link>
+                  </li>
+                  <li
+                    className={
+                      location.pathname === "/payslips/management" ? "active" : ""
+                    }
+                  >
+                    <Link to="/payslips/management" onClick={handleMenuClick}>
+                      <span className="material-icons">calculate</span>
+                      給与計算管理
+                    </Link>
+                  </li>
+                </>
               )}
             </ul>
           </nav>

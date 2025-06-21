@@ -1,0 +1,25 @@
+{
+  "name": "timeflowconnect-infra",
+  "version": "1.0.0",
+  "description": "TimeFlowConnect AWS CDK Infrastructure",
+  "main": "bin/infra.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk",
+    "deploy": "cdk deploy --all",
+    "diff": "cdk diff --all",
+    "synth": "cdk synth --all",
+    "destroy": "cdk destroy --all"
+  },
+  "devDependencies": {
+    "@types/node": "20.10.5",
+    "aws-cdk": "2.110.0",
+    "typescript": "~5.3.3"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.110.0",
+    "constructs": "^10.0.0",
+    "@aws-cdk/aws-lambda-python-alpha": "2.110.0-alpha.0"
+  }
+}

@@ -95,6 +95,25 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     # 初回パスワード変更フラグを追加
     force_password_change = Column(Boolean, default=True, server_default=expression.false(), nullable=False)
+    
+    # 社員情報
+    employee_code = Column(String(50), unique=True, nullable=True)  # 社員番号（会社独自の番号）
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
+    position = Column(String(100), nullable=True)  # 役職
+    employment_type = Column(String(50), default="full_time")  # full_time, part_time, contract, intern
+    hire_date = Column(Date, nullable=True)  # 入社日
+    
+    # 給与情報
+    hourly_rate = Column(Integer, default=1000)  # 時給（円）
+    monthly_salary = Column(Integer, nullable=True)  # 月給（円）
+    payment_method = Column(String(50), default="bank_transfer")  # bank_transfer, cash
+    
+    # 連絡先情報
+    phone_number = Column(String(20), nullable=True)
+    emergency_contact = Column(String(100), nullable=True)
+    emergency_phone = Column(String(20), nullable=True)
+    address = Column(Text, nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -102,10 +121,12 @@ class User(Base):
     attendances = relationship("Attendance", back_populates="user")
     shifts = relationship("Shift", back_populates="user", foreign_keys="Shift.user_id")
     adjustment_requests = relationship("TimeAdjustmentRequest", foreign_keys=[TimeAdjustmentRequest.user_id], back_populates="user")
-    departments = relationship("UserDepartment", back_populates="user")
+    department = relationship("Department", back_populates="users")
+    user_departments = relationship("UserDepartment", back_populates="user")
     leaves = relationship("Leave", foreign_keys=[Leave.user_id], back_populates="user")
     leave_allocations = relationship("LeaveAllocation", back_populates="user")
     reports = relationship("Report", back_populates="user")
+    payslips = relationship("Payslip", foreign_keys="Payslip.user_id", back_populates="user")
 
 
 class Attendance(Base):
@@ -166,6 +187,76 @@ class PayrollSetting(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 
+# 給与明細モデル
+class Payslip(Base):
+    __tablename__ = "payslips"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    
+    # 勤怠情報
+    work_days = Column(Integer, default=0)  # 出勤日数
+    total_hours = Column(Float, default=0)  # 総労働時間
+    regular_hours = Column(Float, default=0)  # 通常勤務時間
+    overtime_hours = Column(Float, default=0)  # 残業時間
+    late_night_hours = Column(Float, default=0)  # 深夜勤務時間
+    holiday_hours = Column(Float, default=0)  # 休日勤務時間
+    
+    # 支給項目
+    base_salary = Column(Integer, default=0)  # 基本給
+    overtime_pay = Column(Integer, default=0)  # 残業手当
+    late_night_pay = Column(Integer, default=0)  # 深夜手当
+    holiday_pay = Column(Integer, default=0)  # 休日手当
+    other_allowances = Column(Integer, default=0)  # その他手当
+    gross_salary = Column(Integer, default=0)  # 総支給額
+    
+    # 控除項目
+    health_insurance = Column(Integer, default=0)  # 健康保険料
+    pension = Column(Integer, default=0)  # 厚生年金
+    employment_insurance = Column(Integer, default=0)  # 雇用保険
+    income_tax = Column(Integer, default=0)  # 所得税
+    resident_tax = Column(Integer, default=0)  # 住民税
+    other_deductions = Column(Integer, default=0)  # その他控除
+    total_deductions = Column(Integer, default=0)  # 控除合計
+    
+    # 差引支給額
+    net_salary = Column(Integer, default=0)  # 手取り額
+    
+    # ステータス
+    status = Column(String(20), default="draft")  # draft, confirmed, paid
+    confirmed_at = Column(DateTime, nullable=True)
+    confirmed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    paid_at = Column(DateTime, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    # リレーションシップ
+    user = relationship("User", foreign_keys=[user_id], back_populates="payslips")
+    confirmed_by_user = relationship("User", foreign_keys=[confirmed_by])
+    details = relationship("PayslipDetail", back_populates="payslip", cascade="all, delete-orphan")
+
+
+# 給与明細詳細モデル（拡張用）
+class PayslipDetail(Base):
+    __tablename__ = "payslip_details"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    payslip_id = Column(Integer, ForeignKey("payslips.id"), nullable=False)
+    
+    category = Column(String(50), nullable=False)  # allowance, deduction
+    item_name = Column(String(100), nullable=False)  # 項目名
+    amount = Column(Integer, nullable=False)  # 金額
+    description = Column(String(255), nullable=True)  # 説明
+    
+    created_at = Column(DateTime, default=datetime.now)
+    
+    # リレーションシップ
+    payslip = relationship("Payslip", back_populates="details")
+
+
 class Holiday(Base):
     __tablename__ = "holidays"
 
@@ -204,7 +295,8 @@ class Department(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     
     # リレーションシップ
-    users = relationship("UserDepartment", back_populates="department")
+    users = relationship("User", foreign_keys="User.department_id", back_populates="department")
+    user_departments = relationship("UserDepartment", back_populates="department")
 
 
 # ユーザーと部署の関連モデル（多対多）
@@ -217,8 +309,8 @@ class UserDepartment(Base):
     created_at = Column(DateTime, default=datetime.now)
     
     # リレーションシップ
-    user = relationship("User", back_populates="departments")
-    department = relationship("Department", back_populates="users")
+    user = relationship("User", back_populates="user_departments")
+    department = relationship("Department", back_populates="user_departments")
 
 
 # 有給休暇付与記録モデル
