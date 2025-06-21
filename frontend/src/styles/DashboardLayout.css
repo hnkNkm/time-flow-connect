@@ -1,18 +1,20 @@
+/* ダッシュボードレイアウト全体 */
 .dashboard-layout {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
+/* ヘッダー */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 1rem;
   height: 60px;
-  background-color: var(--primary-color);
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
   color: white;
-  box-shadow: var(--shadow);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   position: fixed;
   top: 0;
   left: 0;
@@ -24,6 +26,18 @@
 .header-right {
   display: flex;
   align-items: center;
+  gap: 1rem;
+}
+
+.quick-actions {
+  display: flex;
+  align-items: center;
+  padding-right: 1rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.quick-actions button {
+  color: white;
 }
 
 .menu-toggle {
@@ -36,21 +50,40 @@
   display: flex;
   align-items: center;
   padding: 0.5rem;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.menu-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .app-title {
   font-size: 1.25rem;
   margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .user-info {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .user-name {
   margin-right: 1rem;
   font-weight: 500;
+}
+
+.hidden-sm {
+  display: inline;
+}
+
+@media (max-width: 768px) {
+  .hidden-sm {
+    display: none;
+  }
 }
 
 .logout-button {
@@ -63,11 +96,12 @@
   padding: 0.5rem;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .logout-button:hover {
   background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 .dashboard-container {
@@ -76,16 +110,17 @@
   margin-top: 60px; /* ヘッダーの高さと同じ */
 }
 
+/* サイドバー */
 .sidebar {
-  background-color: var(--card-background);
-  box-shadow: var(--shadow);
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
 }
 
 /* デスクトップサイズの表示 */
 @media (min-width: 769px) {
   .sidebar {
-    width: 250px;
+    width: 280px;
     flex-shrink: 0;
     height: calc(100vh - 60px);
     position: sticky;
@@ -115,6 +150,7 @@
     z-index: 1000;
     padding-top: 0;
     overflow-y: auto;
+    transition: left 0.3s ease;
   }
 
   .sidebar.open {
@@ -142,7 +178,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem;
-    background-color: var(--primary-color);
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
     color: white;
   }
 
@@ -158,50 +194,302 @@
     font-size: 1.5rem;
     cursor: pointer;
     padding: 0.5rem;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+  }
+
+  .close-menu:hover {
+    background-color: rgba(255, 255, 255, 0.1);
   }
 }
 
 .sidebar-nav {
-  padding: 1rem 0;
+  padding: 0.5rem 0;
 }
 
-.sidebar-nav ul {
+/* メニューリスト */
+.menu-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.sidebar-nav li {
+/* メニューアイテム */
+.menu-item {
+  position: relative;
   margin-bottom: 0.25rem;
+  transition: all 0.3s ease;
 }
 
-.sidebar-nav li a {
+.menu-item.level-0 {
+  background-color: white;
+  border-radius: 12px;
+  margin: 0.5rem 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+}
+
+.menu-item.level-0:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.menu-item.level-1 {
+  background-color: transparent;
+  margin: 0;
+}
+
+.menu-item a,
+.menu-toggle-item {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem;
-  color: var(--text-color);
+  padding: 1rem 1.25rem;
+  color: #495057;
   text-decoration: none;
-  transition: all 0.2s;
-}
-
-.sidebar-nav li a:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  text-decoration: none;
-}
-
-.sidebar-nav li.active a {
-  background-color: rgba(0, 102, 204, 0.1);
-  color: var(--primary-color);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-size: 0.95rem;
   font-weight: 500;
-  border-left: 3px solid var(--primary-color);
+  border-radius: 12px;
 }
 
-.sidebar-nav li a span.material-icons {
+.menu-item.level-1 a,
+.menu-item.level-1 .menu-toggle-item {
+  padding: 0.75rem 1rem 0.75rem 3.5rem;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: #6c757d;
+}
+
+.menu-item a:hover,
+.menu-toggle-item:hover {
+  background-color: rgba(25, 118, 210, 0.04);
+  color: #1976d2;
+  text-decoration: none;
+}
+
+.menu-item.level-1 a:hover {
+  background-color: rgba(25, 118, 210, 0.08);
+  padding-left: 3.75rem;
+}
+
+.menu-item.active > a,
+.menu-item.active > .menu-toggle-item {
+  background-color: rgba(25, 118, 210, 0.08);
+  color: #1976d2;
+  font-weight: 600;
+  position: relative;
+}
+
+.menu-item.level-0.active {
+  background-color: #f0f7ff;
+  border-color: #90caf9;
+}
+
+.menu-item.level-0.active > a::before,
+.menu-item.level-0.active > .menu-toggle-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 70%;
+  background-color: #1976d2;
+  border-radius: 0 4px 4px 0;
+}
+
+.menu-item.level-1.active > a {
+  background-color: rgba(25, 118, 210, 0.12);
+  color: #1565c0;
+}
+
+.menu-icon {
+  display: flex;
+  align-items: center;
   margin-right: 0.75rem;
+}
+
+.menu-icon .material-icons {
+  font-size: 1.25rem;
+  color: #6c757d;
+  transition: color 0.2s ease;
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+.menu-item:hover .menu-icon .material-icons {
+  color: #1976d2;
+}
+
+.menu-item.active .menu-icon .material-icons {
+  color: #1976d2;
+}
+
+/* メニューグループ別のアイコン色 */
+.menu-item[data-menu-id="home"] .menu-icon .material-icons {
+  color: #1976d2;
+}
+
+.menu-item[data-menu-id="attendance"] .menu-icon .material-icons {
+  color: #2e7d32;
+}
+
+.menu-item[data-menu-id="shift"] .menu-icon .material-icons {
+  color: #7c4dff;
+}
+
+.menu-item[data-menu-id="leave"] .menu-icon .material-icons {
+  color: #00897b;
+}
+
+.menu-item[data-menu-id="payroll"] .menu-icon .material-icons {
+  color: #f57c00;
+}
+
+.menu-item[data-menu-id="management"] .menu-icon .material-icons {
+  color: #d32f2f;
+}
+
+/* アクティブ時はアイコン色を維持 */
+.menu-item.active[data-menu-id="home"] .menu-icon .material-icons,
+.menu-item[data-menu-id="home"]:hover .menu-icon .material-icons {
+  color: #1976d2;
+}
+
+.menu-item.active[data-menu-id="attendance"] .menu-icon .material-icons,
+.menu-item[data-menu-id="attendance"]:hover .menu-icon .material-icons {
+  color: #2e7d32;
+}
+
+.menu-item.active[data-menu-id="shift"] .menu-icon .material-icons,
+.menu-item[data-menu-id="shift"]:hover .menu-icon .material-icons {
+  color: #7c4dff;
+}
+
+.menu-item.active[data-menu-id="leave"] .menu-icon .material-icons,
+.menu-item[data-menu-id="leave"]:hover .menu-icon .material-icons {
+  color: #00897b;
+}
+
+.menu-item.active[data-menu-id="payroll"] .menu-icon .material-icons,
+.menu-item[data-menu-id="payroll"]:hover .menu-icon .material-icons {
+  color: #f57c00;
+}
+
+.menu-item.active[data-menu-id="management"] .menu-icon .material-icons,
+.menu-item[data-menu-id="management"]:hover .menu-icon .material-icons {
+  color: #d32f2f;
+}
+
+.menu-label {
+  flex: 1;
+}
+
+.menu-arrow {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.menu-arrow .material-icons {
+  font-size: 1.25rem;
+  color: #adb5bd;
+  transition: transform 0.3s ease, color 0.2s ease;
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+.menu-item:hover .menu-arrow .material-icons {
+  color: #6c757d;
+}
+
+.menu-item.expanded .menu-arrow .material-icons {
+  transform: rotate(180deg);
+}
+
+/* サブメニュー */
+.submenu {
+  list-style: none;
+  padding: 0.25rem 0 0.5rem;
+  margin: 0;
+  overflow: hidden;
+  animation: slideDown 0.3s ease-out;
+  background-color: rgba(248, 249, 250, 0.5);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
 }
 
 .main-content {
   flex: 1;
   padding: 1.5rem;
   overflow-y: auto;
+  background-color: #f5f6fa;
+}
+
+/* スクロールバーのスタイリング */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* アクセシビリティ */
+.menu-item a:focus,
+.menu-toggle-item:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: -2px;
+}
+
+/* トランジション */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

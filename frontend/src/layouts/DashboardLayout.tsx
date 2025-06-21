@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { menuItems } from "../config/menuConfig";
+import { MenuItem } from "../types/navigation";
+import QuickAttendance from "../components/QuickAttendance";
+import NotificationBadge from "../components/NotificationBadge";
 import "../styles/DashboardLayout.css";
 
 const DashboardLayout: React.FC = () => {
@@ -9,6 +13,7 @@ const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['attendance', 'payroll']);
 
   // 画面サイズの変更を検知
   useEffect(() => {
@@ -25,6 +30,24 @@ const DashboardLayout: React.FC = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  // 現在のパスに基づいてメニューを自動展開
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.startsWith('/attendance') || path.startsWith('/team')) {
+      if (!expandedMenus.includes('attendance')) {
+        setExpandedMenus(prev => [...prev, 'attendance']);
+      }
+    } else if (path.startsWith('/payslips')) {
+      if (!expandedMenus.includes('payroll')) {
+        setExpandedMenus(prev => [...prev, 'payroll']);
+      }
+    } else if (path.startsWith('/employees')) {
+      if (!expandedMenus.includes('management')) {
+        setExpandedMenus(prev => [...prev, 'management']);
+      }
+    }
+  }, [location.pathname]);
 
   // ログアウト処理
   const handleLogout = () => {
@@ -44,6 +67,71 @@ const DashboardLayout: React.FC = () => {
     }
   };
 
+  // メニューの展開/折りたたみ
+  const toggleMenuExpand = (menuId: string) => {
+    setExpandedMenus(prev => 
+      prev.includes(menuId) 
+        ? prev.filter(id => id !== menuId)
+        : [...prev, menuId]
+    );
+  };
+
+  // メニュー項目のレンダリング
+  const renderMenuItem = (item: MenuItem, level: number = 0) => {
+    // 管理者限定メニューの表示制御
+    if (item.adminOnly && !isAdmin) {
+      return null;
+    }
+
+    const hasChildren = item.children && item.children.length > 0;
+    const isExpanded = expandedMenus.includes(item.id);
+    const isActive = item.path ? location.pathname === item.path : false;
+    const isChildActive = hasChildren && item.children.some(child => 
+      child.path && location.pathname === child.path
+    );
+
+    return (
+      <li 
+        key={item.id} 
+        className={`menu-item level-${level} ${isActive || isChildActive ? 'active' : ''} ${isExpanded ? 'expanded' : ''}`}
+        data-menu-id={item.id}
+      >
+        {hasChildren ? (
+          <>
+            <button
+              className="menu-toggle-item"
+              onClick={() => toggleMenuExpand(item.id)}
+              aria-expanded={isExpanded}
+              aria-controls={`submenu-${item.id}`}
+            >
+              <span className="menu-icon">
+                <span className="material-icons">{item.icon}</span>
+              </span>
+              <span className="menu-label">{item.label}</span>
+              <span className="menu-arrow">
+                <span className="material-icons">
+                  {isExpanded ? 'expand_less' : 'expand_more'}
+                </span>
+              </span>
+            </button>
+            {isExpanded && (
+              <ul className="submenu" id={`submenu-${item.id}`}>
+                {item.children.map(child => renderMenuItem(child, level + 1))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <Link to={item.path || '#'} onClick={handleMenuClick}>
+            <span className="menu-icon">
+              <span className="material-icons">{item.icon}</span>
+            </span>
+            <span className="menu-label">{item.label}</span>
+          </Link>
+        )}
+      </li>
+    );
+  };
+
   return (
     <div className="dashboard-layout">
       <header className="header">
@@ -55,9 +143,13 @@ const DashboardLayout: React.FC = () => {
           >
             <span className="material-icons">menu</span>
           </button>
-          <h1 className="app-title">TimeFlow</h1>
+          <h1 className="app-title">勤怠管理システム</h1>
         </div>
         <div className="header-right">
+          <div className="quick-actions">
+            <QuickAttendance variant="icon" />
+            {isAdmin && <NotificationBadge />}
+          </div>
           <div className="user-info">
             <span className="user-name hidden-sm">
               {user?.full_name || "ユーザー"}
@@ -85,91 +177,8 @@ const DashboardLayout: React.FC = () => {
             </div>
           )}
           <nav className="sidebar-nav">
-            <ul>
-              <li
-                className={
-                  location.pathname === "/attendance/form" ? "active" : ""
-                }
-              >
-                <Link to="/attendance/form" onClick={handleMenuClick}>
-                  <span className="material-icons">schedule</span>
-                  勤怠申請
-                </Link>
-              </li>
-              <li
-                className={
-                  location.pathname === "/attendance/list" ? "active" : ""
-                }
-              >
-                <Link to="/attendance/list" onClick={handleMenuClick}>
-                  <span className="material-icons">list</span>
-                  勤怠一覧
-                </Link>
-              </li>
-              <li
-                className={
-                  location.pathname === "/attendance/monthly" ? "active" : ""
-                }
-              >
-                <Link to="/attendance/monthly" onClick={handleMenuClick}>
-                  <span className="material-icons">calendar_month</span>
-                  月間勤怠
-                </Link>
-              </li>
-              <li className={location.pathname === "/shift" ? "active" : ""}>
-                <Link to="/shift" onClick={handleMenuClick}>
-                  <span className="material-icons">event_note</span>
-                  シフト管理
-                </Link>
-              </li>
-              <li
-                className={
-                  location.pathname.startsWith("/payslips") &&
-                  !location.pathname.includes("/management")
-                    ? "active"
-                    : ""
-                }
-              >
-                <Link to="/payslips" onClick={handleMenuClick}>
-                  <span className="material-icons">receipt_long</span>
-                  給与明細
-                </Link>
-              </li>
-
-              {isAdmin && (
-                <>
-                  <li
-                    className={
-                      location.pathname === "/team/monthly" ? "active" : ""
-                    }
-                  >
-                    <Link to="/team/monthly" onClick={handleMenuClick}>
-                      <span className="material-icons">group</span>
-                      チーム月間勤怠
-                    </Link>
-                  </li>
-                  <li
-                    className={
-                      location.pathname.startsWith("/employees") ? "active" : ""
-                    }
-                  >
-                    <Link to="/employees" onClick={handleMenuClick}>
-                      <span className="material-icons">manage_accounts</span>
-                      社員管理
-                    </Link>
-                  </li>
-                  <li
-                    className={
-                      location.pathname === "/payslips/management" ? "active" : ""
-                    }
-                  >
-                    <Link to="/payslips/management" onClick={handleMenuClick}>
-                      <span className="material-icons">calculate</span>
-                      給与計算管理
-                    </Link>
-                  </li>
-                </>
-              )}
+            <ul className="menu-list">
+              {menuItems.map(item => renderMenuItem(item))}
             </ul>
           </nav>
         </aside>
