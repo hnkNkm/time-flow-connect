@@ -6,7 +6,7 @@ import { MenuItem } from "../types/navigation";
 import QuickAttendance from "../components/QuickAttendance";
 import NotificationBadge from "../components/NotificationBadge";
 import PasswordChangeDialog from "../components/PasswordChangeDialog";
-import { Menu, MenuItem, Divider, ListItemIcon, ListItemText } from "@mui/material";
+import { Menu, MenuItem as MuiMenuItem, Divider, ListItemIcon, ListItemText } from "@mui/material";
 import { AccountCircle, Lock as LockIcon, Logout as LogoutIcon } from "@mui/icons-material";
 import "../styles/DashboardLayout.css";
 
@@ -311,19 +311,19 @@ const DashboardLayout: React.FC = () => {
           horizontal: 'right',
         }}
       >
-        <MenuItem onClick={handlePasswordChange}>
+        <MuiMenuItem onClick={handlePasswordChange}>
           <ListItemIcon>
             <LockIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>パスワード変更</ListItemText>
-        </MenuItem>
+        </MuiMenuItem>
         <Divider />
-        <MenuItem onClick={handleLogout}>
+        <MuiMenuItem onClick={handleLogout}>
           <ListItemIcon>
             <LogoutIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>ログアウト</ListItemText>
-        </MenuItem>
+        </MuiMenuItem>
       </Menu>
 
       {/* パスワード変更ダイアログ */}
