@@ -95,6 +95,25 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     # 初回パスワード変更フラグを追加
     force_password_change = Column(Boolean, default=True, server_default=expression.false(), nullable=False)
+    
+    # 社員情報
+    employee_id = Column(String(50), unique=True, nullable=True)  # 社員番号
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
+    position = Column(String(100), nullable=True)  # 役職
+    employment_type = Column(String(50), default="full_time")  # full_time, part_time, contract, intern
+    hire_date = Column(Date, nullable=True)  # 入社日
+    
+    # 給与情報
+    hourly_rate = Column(Integer, default=1000)  # 時給（円）
+    monthly_salary = Column(Integer, nullable=True)  # 月給（円）
+    payment_method = Column(String(50), default="bank_transfer")  # bank_transfer, cash
+    
+    # 連絡先情報
+    phone_number = Column(String(20), nullable=True)
+    emergency_contact = Column(String(100), nullable=True)
+    emergency_phone = Column(String(20), nullable=True)
+    address = Column(Text, nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -102,7 +121,8 @@ class User(Base):
     attendances = relationship("Attendance", back_populates="user")
     shifts = relationship("Shift", back_populates="user", foreign_keys="Shift.user_id")
     adjustment_requests = relationship("TimeAdjustmentRequest", foreign_keys=[TimeAdjustmentRequest.user_id], back_populates="user")
-    departments = relationship("UserDepartment", back_populates="user")
+    department = relationship("Department", back_populates="users")
+    user_departments = relationship("UserDepartment", back_populates="user")
     leaves = relationship("Leave", foreign_keys=[Leave.user_id], back_populates="user")
     leave_allocations = relationship("LeaveAllocation", back_populates="user")
     reports = relationship("Report", back_populates="user")
@@ -204,7 +224,8 @@ class Department(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     
     # リレーションシップ
-    users = relationship("UserDepartment", back_populates="department")
+    users = relationship("User", foreign_keys="User.department_id", back_populates="department")
+    user_departments = relationship("UserDepartment", back_populates="department")
 
 
 # ユーザーと部署の関連モデル（多対多）
@@ -217,8 +238,8 @@ class UserDepartment(Base):
     created_at = Column(DateTime, default=datetime.now)
     
     # リレーションシップ
-    user = relationship("User", back_populates="departments")
-    department = relationship("Department", back_populates="users")
+    user = relationship("User", back_populates="user_departments")
+    department = relationship("Department", back_populates="user_departments")
 
 
 # 有給休暇付与記録モデル

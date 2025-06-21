@@ -124,16 +124,28 @@ const DashboardLayout: React.FC = () => {
               </li>
 
               {isAdmin && (
-                <li
-                  className={
-                    location.pathname === "/team/monthly" ? "active" : ""
-                  }
-                >
-                  <Link to="/team/monthly" onClick={handleMenuClick}>
-                    <span className="material-icons">group</span>
-                    チーム月間勤怠
-                  </Link>
-                </li>
+                <>
+                  <li
+                    className={
+                      location.pathname === "/team/monthly" ? "active" : ""
+                    }
+                  >
+                    <Link to="/team/monthly" onClick={handleMenuClick}>
+                      <span className="material-icons">group</span>
+                      チーム月間勤怠
+                    </Link>
+                  </li>
+                  <li
+                    className={
+                      location.pathname.startsWith("/employees") ? "active" : ""
+                    }
+                  >
+                    <Link to="/employees" onClick={handleMenuClick}>
+                      <span className="material-icons">manage_accounts</span>
+                      社員管理
+                    </Link>
+                  </li>
+                </>
               )}
             </ul>
           </nav>

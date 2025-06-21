@@ -185,3 +185,43 @@ export const shiftAPI = {
     return api.get(`/api/shifts/estimated-salary/${year}/${month}`, { params });
   },
 };
+
+// 社員管理関連のAPI
+export const employeeAPI = {
+  getEmployees: async (params?: {
+    page?: number;
+    per_page?: number;
+    search?: string;
+    department_id?: number;
+    employment_type?: string;
+    is_active?: boolean;
+    sort_by?: string;
+    sort_order?: string;
+  }) => {
+    return api.get("/api/employees", { params });
+  },
+
+  getEmployee: async (id: number) => {
+    return api.get(`/api/employees/${id}`);
+  },
+
+  createEmployee: async (data: any) => {
+    return api.post("/api/employees", data);
+  },
+
+  updateEmployee: async (id: number, data: any) => {
+    return api.put(`/api/employees/${id}`, data);
+  },
+
+  toggleEmployeeActive: async (id: number) => {
+    return api.put(`/api/employees/${id}/toggle-active`);
+  },
+
+  changePassword: async (data: { current_password: string; new_password: string }) => {
+    return api.post("/api/employees/password/change", data);
+  },
+
+  resetPassword: async (data: { user_id: number; new_password: string }) => {
+    return api.post("/api/employees/password/reset", data);
+  },
+};

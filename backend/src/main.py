@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from .database import init_db
-from .routers import auth, attendance, shift
+from .routers import auth, attendance, shift, employee
 # 一時的にコメントアウト - 問題解決後に戻す
 # from .routers import users, payroll, department, leave, report
 
@@ -44,6 +44,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(attendance.router)
 app.include_router(shift.router)
+app.include_router(employee.router)
 # 一時的にコメントアウト - 問題解決後に戻す
 # app.include_router(users.router)
 # app.include_router(payroll.router)

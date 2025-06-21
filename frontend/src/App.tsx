@@ -13,6 +13,8 @@ import AttendanceListPage from "./pages/AttendanceListPage";
 import MonthlyAttendancePage from "./pages/MonthlyAttendancePage";
 import TeamMonthlyAttendancePage from "./pages/TeamMonthlyAttendancePage";
 import ShiftManagementPage from "./pages/ShiftManagementPage";
+import EmployeeListPage from "./pages/EmployeeListPage";
+import EmployeeDetailPage from "./pages/EmployeeDetailPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./App.css";
@@ -89,6 +91,22 @@ function App() {
                 <AdminRoute>
                   <TeamMonthlyAttendancePage />
                 </AdminRoute>
+              }
+            />
+            <Route
+              path="/employees"
+              element={
+                <AdminRoute>
+                  <EmployeeListPage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/employees/:id"
+              element={
+                <PrivateRoute>
+                  <EmployeeDetailPage />
+                </PrivateRoute>
               }
             />
           </Route>
