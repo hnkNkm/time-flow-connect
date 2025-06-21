@@ -7,6 +7,7 @@ import calendar
 
 from ..database import get_db
 from ..models.models import User, Attendance, PayrollSetting, Payslip, PayslipDetail, Holiday
+from ..routers.insurance_rate import get_active_insurance_rate, get_income_tax_rate
 from ..schemas.payslip import (
     PayslipCreate,
     PayslipUpdate,
@@ -211,24 +212,63 @@ async def calculate_payslips(
             holiday_pay = int(holiday_hours * hourly_rate * payroll_setting.holiday_rate)
             gross_salary = base_salary + overtime_pay + late_night_pay + holiday_pay
             
-            # 簡易的な控除計算（実際の計算は複雑）
-            if user.monthly_salary:
-                # 月給制の場合
-                health_insurance = int(user.monthly_salary * 0.05)  # 健康保険料（約5%）
-                pension = int(user.monthly_salary * 0.0915)  # 厚生年金（約9.15%）
-                employment_insurance = int(user.monthly_salary * 0.003)  # 雇用保険（約0.3%）
+            # 控除計算
+            if payroll_setting.use_db_rates:
+                # DB料率を使用
+                prefecture = payroll_setting.default_prefecture or "東京都"
+                industry = payroll_setting.default_industry or "一般"
+                
+                # 健康保険料
+                health_rate = get_active_insurance_rate(db, "health", prefecture=prefecture)
+                if health_rate and health_rate.employee_rate:
+                    health_insurance = int(gross_salary * health_rate.employee_rate)
+                else:
+                    health_insurance = int(gross_salary * 0.05)  # デフォルト
+                
+                # 厚生年金
+                pension_rate = get_active_insurance_rate(db, "pension")
+                if pension_rate and pension_rate.employee_rate:
+                    pension = int(gross_salary * pension_rate.employee_rate)
+                else:
+                    pension = int(gross_salary * 0.0915)  # デフォルト
+                
+                # 雇用保険
+                employment_rate = get_active_insurance_rate(db, "employment", industry_type=industry)
+                if employment_rate and employment_rate.employee_rate:
+                    employment_insurance = int(gross_salary * employment_rate.employee_rate)
+                else:
+                    employment_insurance = int(gross_salary * 0.003)  # デフォルト
+                
+                # 所得税計算
+                taxable_income = gross_salary - health_insurance - pension - employment_insurance
+                tax_rate = get_income_tax_rate(db, taxable_income)
+                if tax_rate:
+                    income_tax = int(taxable_income * tax_rate.rate - tax_rate.deduction)
+                else:
+                    # デフォルトの簡易計算
+                    if taxable_income > 195000:
+                        income_tax = int(taxable_income * 0.05)
+                    else:
+                        income_tax = 0
             else:
-                # 時給制の場合
-                health_insurance = int(gross_salary * 0.05)
-                pension = int(gross_salary * 0.0915)
-                employment_insurance = int(gross_salary * 0.003)
-            
-            # 所得税の簡易計算
-            taxable_income = gross_salary - health_insurance - pension - employment_insurance
-            if taxable_income > 195000:
-                income_tax = int(taxable_income * 0.05)
-            else:
-                income_tax = 0
+                # 簡易的な控除計算（従来の方法）
+                if user.monthly_salary:
+                    # 月給制の場合
+                    health_insurance = int(user.monthly_salary * 0.05)  # 健康保険料（約5%）
+                    pension = int(user.monthly_salary * 0.0915)  # 厚生年金（約9.15%）
+                    employment_insurance = int(user.monthly_salary * 0.003)  # 雇用保険（約0.3%）
+                else:
+                    # 時給制の場合
+                    health_insurance = int(gross_salary * 0.05)
+                    pension = int(gross_salary * 0.0915)
+                    employment_insurance = int(gross_salary * 0.003)
+                
+                # 所得税の簡易計算
+                taxable_income = gross_salary - health_insurance - pension - employment_insurance
+                if taxable_income > 195000:
+                    income_tax = int(taxable_income * 0.05)
+                else:
+                    income_tax = 0
             
             total_deductions = health_insurance + pension + employment_insurance + income_tax
             net_salary = gross_salary - total_deductions

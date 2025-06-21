@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from .database import init_db
-from .routers import auth, attendance, shift, employee, payslip
+from .routers import auth, attendance, shift, employee, payslip, insurance_rate
 # 一時的にコメントアウト - 問題解決後に戻す
 # from .routers import users, payroll, department, leave, report
 
@@ -46,6 +46,7 @@ app.include_router(attendance.router)
 app.include_router(shift.router)
 app.include_router(employee.router)
 app.include_router(payslip.router)
+app.include_router(insurance_rate.router)
 # 一時的にコメントアウト - 問題解決後に戻す
 # app.include_router(users.router)
 # app.include_router(payroll.router)
