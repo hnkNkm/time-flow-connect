@@ -37,13 +37,13 @@ class EmployeeBase(BaseModel):
     employee_id: Optional[str] = None
     department_id: Optional[int] = None
     position: Optional[str] = None
-    employment_type: EmploymentType = EmploymentType.FULL_TIME
+    employment_type: Optional[EmploymentType] = EmploymentType.FULL_TIME
     hire_date: Optional[date] = None
     
     # 給与情報
-    hourly_rate: int = 1000
+    hourly_rate: Optional[int] = 1000
     monthly_salary: Optional[int] = None
-    payment_method: PaymentMethod = PaymentMethod.BANK_TRANSFER
+    payment_method: Optional[PaymentMethod] = PaymentMethod.BANK_TRANSFER
     
     # 連絡先情報
     phone_number: Optional[str] = None
